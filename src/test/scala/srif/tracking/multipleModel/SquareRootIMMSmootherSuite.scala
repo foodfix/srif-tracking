@@ -64,14 +64,13 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val filterStateProbabilities: List[Double] = immFilterResult(idx).updatedLogModeProbability.toArray.toList.map(math.exp)
       val filterModel: Int = argmax(immFilterResult(idx).updatedLogModeProbability)
       val filterFusedState = calculateGaussianMixtureDistribution(filterStates, filterStateProbabilities, modelStateProjectionMatrix(filterModel, ::).t.toArray.toList, filterModel)
-      val filterErrorVector = targetModelLst(filterModel).observationMatrix * filterFusedState.toGaussianDistribution.m - targetModelLst(model).observationMatrix * state
+      val filterErrorVector = modelStateProjectionMatrix(0, filterModel) * filterFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
 
       val smoothStates: List[FactoredGaussianDistribution] = immSmootherResult(idx).smoothResultPerSmoother.map(_.smoothedStateEstimation)
       val smoothProbabilities: List[Double] = immSmootherResult(idx).smoothedLogModeProbability.toArray.toList.map(math.exp)
       val smoothModel: Int = argmax(immSmootherResult(idx).smoothedLogModeProbability)
       val smoothFusedState = calculateGaussianMixtureDistribution(smoothStates, smoothProbabilities, modelStateProjectionMatrix(smoothModel, ::).t.toArray.toList, smoothModel)
-
-      val smoothErrorVector = targetModelLst(smoothModel).observationMatrix * smoothFusedState.toGaussianDistribution.m - targetModelLst(model).observationMatrix * state
+      val smoothErrorVector = modelStateProjectionMatrix(0, smoothModel) * smoothFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
 
       val filterStateError: Double = filterErrorVector.t * filterErrorVector
       val smoothStateError: Double = smoothErrorVector.t * smoothErrorVector
