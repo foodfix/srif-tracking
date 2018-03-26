@@ -92,6 +92,7 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
       val (predictionError, updateError) = computeError(stateLst, results)
 
+      results.length should be(numOfEvents)
       predictionError should be <= 130.0
       updateError should be <= 95.0
 
@@ -122,6 +123,7 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
       val (predictionError, updateError) = computeError(stateLst, results)
 
+      results.length should be(numOfEvents)
       predictionError should be <= 25.0
       updateError should be <= 23.0
 
@@ -154,6 +156,7 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
       val (predictionError, updateError) = computeError(stateLst, results)
 
+      results.length should be(numOfEvents)
       predictionError should be <= 11.0
       updateError should be <= 11.0
 
@@ -185,6 +188,7 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
     val (predictionError, updateError) = computeError(stateLst, results)
 
+    results.length should be(numOfEvents)
     predictionError should be <= 11.0
     updateError should be <= 11.0
 

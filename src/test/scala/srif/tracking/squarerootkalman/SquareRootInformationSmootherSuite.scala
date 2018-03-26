@@ -84,6 +84,7 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
       val smoothError = computeError(stateLst, results)
 
+      results.length should be(numOfEvents)
       smoothError should be <= 55.0
 
     })
@@ -113,6 +114,7 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
       val smoothError = computeError(stateLst, results)
 
+      results.length should be(numOfEvents)
       smoothError should be <= 16.0
 
     })
@@ -143,6 +145,7 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
       val smoothError = computeError(stateLst, results)
 
+      results.length should be(numOfEvents)
       smoothError should be <= 7.0
 
     })
@@ -172,6 +175,7 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
     val smoothError = computeError(stateLst, results)
 
+    results.length should be(numOfEvents)
     smoothError should be <= 7.0
 
   }

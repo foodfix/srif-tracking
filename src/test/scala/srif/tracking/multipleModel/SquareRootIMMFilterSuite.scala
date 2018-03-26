@@ -78,6 +78,7 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
     val immFilterStateMSE: Double = error.head.sum / (numOfEvents - numOfSkippedEvent)
     val immFilterModelScore: Double = error(1).sum / (numOfEvents - numOfSkippedEvent)
 
+    immFilterResult.length should be(numOfEvents)
     immFilterStateMSE should be <= stateTol * stateTol
     immFilterModelScore should be >= (1 - modelTol)
 
