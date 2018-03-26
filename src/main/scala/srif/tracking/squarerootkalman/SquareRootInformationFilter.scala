@@ -90,7 +90,7 @@ class SquareRootInformationFilter(targetModel: TargetModel,
 
         val observationLogLikelihood: Double = computeLogObservationProbability(observation, predictedStateEstimation, targetModel.observationMatrix)
 
-        require(!observationLogLikelihood.isNaN) // observationLogLikelihood can be -Inf, means we have no information at all
+        require(!observationLogLikelihood.isNaN)
 
         (updatedStateEstimation,
           FilterResult(predictedStateEstimation, updatedStateEstimation, tilda_R_w, tilda_R_wx, tilda_z_w, observationLogLikelihood))
