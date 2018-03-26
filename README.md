@@ -15,9 +15,9 @@ Dover Publications, 2006.*
 
 We developed square-root IMM model filter and smoother based on the classical IMM filter and smoother.
 
-### Changelog
+### How It Works
 
-- Version 1.0: Initial release.
+You can find an example in [here](src/main/scala/srif/tracking/example/immExample.scala).
 
 ### License
 
