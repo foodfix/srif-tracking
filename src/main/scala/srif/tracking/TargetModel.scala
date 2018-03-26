@@ -27,16 +27,25 @@ trait TargetModel {
   val observationMatrix: DenseMatrix[Double]
 
   /**
-    * Return the state-transition model.
+    * Return the state-transition matrix.
     *
     * The Kalman filter model assumes the true state at time k is evolved from the state at (k − 1) according to
-    * :math:`x_{k} = F_k x_{k-1} + w_k`
+    * :math:`x_{k} = F_k x_{k-1} + G * w_k`
     * where :math:`F_k` is the state-transition matrix.
     *
     * @param stepSize number of seconds from time (k-1) to time k.
     * @return the state-transition matrix
     */
   def calculateStateTransitionMatrix(stepSize: Double): DenseMatrix[Double]
+
+  /**
+    * Return the inverse of state-transition matrix.
+    * :math:`x_{k-1} F_k^{-1} * x_{k} - F_k^{-1} * G * w_k`
+    *
+    * @param stepSize number of seconds from time (k-1) to time k.
+    * @return the inverse of state-transition matrix
+    */
+  def calculateInvStateTransitionMatrix(stepSize: Double): DenseMatrix[Double] = calculateStateTransitionMatrix(-stepSize)
 
   /**
     * Return the covariance matrix of process noise.
@@ -86,8 +95,6 @@ object TargetModel {
     val observationMatrix: DenseMatrix[Double] = DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0))
 
     def calculateStateTransitionMatrix(stepSize: Double): DenseMatrix[Double] = {
-
-      require(stepSize > 0)
 
       DenseMatrix(
         (1.0, stepSize, 0.0, 0.0),
@@ -143,7 +150,6 @@ object TargetModel {
     val observationMatrix: DenseMatrix[Double] = DenseMatrix.eye[Double](stateDim)
 
     def calculateStateTransitionMatrix(stepSize: Double): DenseMatrix[Double] = {
-      require(stepSize > 0)
       DenseMatrix.eye[Double](stateDim)
     }
 
