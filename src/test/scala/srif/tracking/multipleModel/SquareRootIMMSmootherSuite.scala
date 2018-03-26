@@ -159,9 +159,12 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
         f => stepSizeLst.map(f.getTargetModel.calculateStateTransitionMatrix)
       ).transpose
+      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
+        f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
+      ).transpose
 
-      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
-      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
+      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
       validateIMMSmootherResult(states, models, immFilterResult, immSmootherResult, 0.05, 30, false)
 
@@ -188,9 +191,12 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
         f => stepSizeLst.map(f.getTargetModel.calculateStateTransitionMatrix)
       ).transpose
+      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
+        f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
+      ).transpose
 
-      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
-      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
+      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
       validateIMMSmootherResult(states, models, immFilterResult, immSmootherResult, 0.01, 100, false)
 
@@ -217,9 +223,12 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
         f => stepSizeLst.map(f.getTargetModel.calculateStateTransitionMatrix)
       ).transpose
+      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
+        f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
+      ).transpose
 
-      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
-      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
+      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
       validateIMMSmootherResult(states, models, immFilterResult, immSmootherResult, 0.15, 100, false)
 

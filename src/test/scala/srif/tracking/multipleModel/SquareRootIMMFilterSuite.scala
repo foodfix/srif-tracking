@@ -129,8 +129,11 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
       val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = filters.map(
         f => stepSizeLst.map(f.getTargetModel.calculateStateTransitionMatrix)
       ).transpose
+      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = filters.map(
+        f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
+      ).transpose
 
-      val result = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
+      val result = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
       validateIMMFilterResult(states, models, result, 0.05, 30)
 
@@ -157,8 +160,11 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
       val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = filters.map(
         f => stepSizeLst.map(f.getTargetModel.calculateStateTransitionMatrix)
       ).transpose
+      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = filters.map(
+        f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
+      ).transpose
 
-      val result = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
+      val result = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
       validateIMMFilterResult(states, models, result, 0.01, 100)
 
@@ -185,8 +191,11 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
       val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = filters.map(
         f => stepSizeLst.map(f.getTargetModel.calculateStateTransitionMatrix)
       ).transpose
+      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = filters.map(
+        f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
+      ).transpose
 
-      val result: List[IMMFilterResult] = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
+      val result = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
       validateIMMFilterResult(states, models, result, 0.15, 100)
 

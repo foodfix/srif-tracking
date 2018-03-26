@@ -39,16 +39,18 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
     * @param observationLst                                 observation for each timestamp
     * @param squareRootProcessNoiseCovariancePerSmootherLst process noise covariance matrix in square root form for each timestamp
     * @param stateTransitionMatrixPerSmootherLst            state transition matrix for each timestamp
+    * @param invStateTransitionMatrixPerFilterLst           inverse of state transition matrix for each timestamp
     * @return smooth result for each timestamp
     */
   def apply(logModelTransitionMatrixLst: List[DenseMatrix[Double]],
             observationLst: List[FactoredGaussianDistribution],
             squareRootProcessNoiseCovariancePerSmootherLst: List[List[DenseMatrix[Double]]],
-            stateTransitionMatrixPerSmootherLst: List[List[DenseMatrix[Double]]]): List[IMMSmootherResult] = {
+            stateTransitionMatrixPerSmootherLst: List[List[DenseMatrix[Double]]],
+            invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[IMMSmootherResult] = {
 
     val numOfTimeSteps: Int = observationLst.length
 
-    val immFilterResult: List[IMMFilterResult] = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerSmootherLst, stateTransitionMatrixPerSmootherLst)
+    val immFilterResult: List[IMMFilterResult] = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerSmootherLst, stateTransitionMatrixPerSmootherLst, invStateTransitionMatrixPerFilterLst)
     val updatedLogModeProbabilityLst = immFilterResult.map(_.updatedLogModeProbability)
 
     val initialSmoothResultPerSmoother: List[SmoothResult] = immFilterResult.last.updateResultPerFilter.map(x => SmoothResult(x.updatedStateEstimation))

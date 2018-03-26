@@ -78,8 +78,9 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
       val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+      val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
       val smoothError = computeError(stateLst, results)
 
@@ -106,8 +107,9 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
       val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+      val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
       val smoothError = computeError(stateLst, results)
 
@@ -135,8 +137,9 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
       val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+      val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
       val smoothError = computeError(stateLst, results)
 
@@ -163,8 +166,9 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
     val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
     val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+    val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-    val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+    val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
     val smoothError = computeError(stateLst, results)
 

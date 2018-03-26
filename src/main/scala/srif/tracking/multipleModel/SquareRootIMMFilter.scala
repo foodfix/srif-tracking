@@ -36,12 +36,14 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
     * @param observationLst                               observation for each timestamp
     * @param squareRootProcessNoiseCovariancePerFilterLst process noise covariance matrix in square root form for each timestamp
     * @param stateTransitionMatrixPerFilterLst            state transition matrix for each timestamp
+    * @param invStateTransitionMatrixPerFilterLst         inverse of state transition matrix for each timestamp
     * @return filter result for each timestamp
     */
   def apply(logModelTransitionMatrixLst: List[DenseMatrix[Double]],
             observationLst: List[FactoredGaussianDistribution],
             squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]],
-            stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[IMMFilterResult] = {
+            stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]],
+            invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[IMMFilterResult] = {
 
     val numOfTimeSteps: Int = observationLst.length
 
@@ -70,8 +72,9 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
       (logModelTransitionMatrixLst(idx),
         observationLst(idx),
         squareRootProcessNoiseCovariancePerFilterLst(idx),
-        stateTransitionMatrixPerFilterLst(idx))).
-      map(p => filterStep(p._1, p._2, p._3, p._4))).
+        stateTransitionMatrixPerFilterLst(idx),
+        invStateTransitionMatrixPerFilterLst(idx))).
+      map(p => filterStep(p._1, p._2, p._3, p._4, p._5))).
       eval(immInitialState)
 
   }
@@ -83,12 +86,14 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
     * @param observation                               observation :math:`z_k`
     * @param squareRootProcessNoiseCovariancePerFilter [[TargetModel.calculateSquareRootProcessNoiseCovariance]] for each filter at time k
     * @param stateTransitionMatrixPerFilter            [[TargetModel.calculateStateTransitionMatrix]] for each filter at time k
+    * @param invStateTransitionMatrixPerFilter         [[TargetModel.calculateInvStateTransitionMatrix()]] for each filter at time k
     * @return
     */
   def filterStep(logModelTransitionMatrix: DenseMatrix[Double],
                  observation: FactoredGaussianDistribution,
                  squareRootProcessNoiseCovariancePerFilter: List[DenseMatrix[Double]],
-                 stateTransitionMatrixPerFilter: List[DenseMatrix[Double]]): State[IMMFilterState, IMMFilterResult] = State[IMMFilterState, IMMFilterResult] {
+                 stateTransitionMatrixPerFilter: List[DenseMatrix[Double]],
+                 invStateTransitionMatrixPerFilter: List[DenseMatrix[Double]]): State[IMMFilterState, IMMFilterResult] = State[IMMFilterState, IMMFilterResult] {
     previousIMMState => {
 
       val (mixedStateEstimatePerFilter: List[FactoredGaussianDistribution], predictedLogModelProbability: DenseVector[Double], logMixingWeight: DenseMatrix[Double]) =
@@ -98,6 +103,7 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
       val filterResultPerFilter: List[FilterResult] = modelConditionedFiltering(observation,
         squareRootProcessNoiseCovariancePerFilter,
         stateTransitionMatrixPerFilter,
+        invStateTransitionMatrixPerFilter,
         mixedStateEstimatePerFilter)
 
       val logModeProbability: DenseVector[Double] = modelProbabilityUpdate(predictedLogModelProbability, filterResultPerFilter.map(_.observationLogLikelihood))
@@ -181,17 +187,20 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
     * @param observation                               refer to [[SquareRootIMMFilter.filterStep]]
     * @param squareRootProcessNoiseCovariancePerFilter refer to [[SquareRootIMMFilter.filterStep]]
     * @param stateTransitionMatrixPerFilter            refer to [[SquareRootIMMFilter.filterStep]]
+    * @param invStateTransitionMatrixPerFilter         refer to [[SquareRootIMMFilter.filterStep]]
     * @param stateEstimationPerFilter                  return of [[SquareRootIMMFilter.modelConditionedReinitialization]]
     * @return state estimation :math:`P(x_k | m_k=i, z_1,...,z_k)` for each i
     */
   def modelConditionedFiltering(observation: FactoredGaussianDistribution,
                                 squareRootProcessNoiseCovariancePerFilter: List[DenseMatrix[Double]],
                                 stateTransitionMatrixPerFilter: List[DenseMatrix[Double]],
+                                invStateTransitionMatrixPerFilter: List[DenseMatrix[Double]],
                                 stateEstimationPerFilter: List[FactoredGaussianDistribution]): List[FilterResult] = {
     List.range(0, numOfFilters).map(filterIndex => {
       filters(filterIndex).filterStep(observation,
         squareRootProcessNoiseCovariancePerFilter(filterIndex),
-        stateTransitionMatrixPerFilter(filterIndex)).
+        stateTransitionMatrixPerFilter(filterIndex),
+        invStateTransitionMatrixPerFilter(filterIndex)).
         eval(stateEstimationPerFilter(filterIndex))
     })
   }

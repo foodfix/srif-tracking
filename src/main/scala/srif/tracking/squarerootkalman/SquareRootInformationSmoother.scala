@@ -43,13 +43,15 @@ class SquareRootInformationSmoother(targetModel: TargetModel,
     * @param observationLst                      : a list of [[FactoredGaussianDistribution]] presents the observations
     * @param squareRootProcessNoiseCovarianceLst : refer to [[TargetModel.calculateSquareRootProcessNoiseCovariance]]
     * @param stateTransitionMatrixLst            : refer to [[TargetModel.calculateStateTransitionMatrix]]
+    * @param invStateTransitionMatrixLst         refer to [[TargetModel.calculateInvStateTransitionMatrix]]
     * @return filterd results
     */
   def apply(observationLst: List[FactoredGaussianDistribution],
             squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]],
-            stateTransitionMatrixLst: List[DenseMatrix[Double]]): List[SmoothResult] = {
+            stateTransitionMatrixLst: List[DenseMatrix[Double]],
+            invStateTransitionMatrixLst: List[DenseMatrix[Double]]): List[SmoothResult] = {
 
-    val filterResultLst = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+    val filterResultLst = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
     sequence(
       (filterResultLst.drop(1), squareRootProcessNoiseCovarianceLst.drop(1), stateTransitionMatrixLst.drop(1)).

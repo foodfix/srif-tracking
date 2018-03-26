@@ -42,11 +42,13 @@ class SquareRootInformationFilter(targetModel: TargetModel,
     * @param observationLst                      : a list of [[FactoredGaussianDistribution]] presents the observations
     * @param squareRootProcessNoiseCovarianceLst : refer to [[TargetModel.calculateSquareRootProcessNoiseCovariance]]
     * @param stateTransitionMatrixLst            : refer to [[TargetModel.calculateStateTransitionMatrix]]
+    * @param invStateTransitionMatrixLst         : refer to [[TargetModel.calculateInvStateTransitionMatrix()]]
     * @return filterd results
     */
   def apply(observationLst: List[FactoredGaussianDistribution],
             squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]],
-            stateTransitionMatrixLst: List[DenseMatrix[Double]]): List[FilterResult] = {
+            stateTransitionMatrixLst: List[DenseMatrix[Double]],
+            invStateTransitionMatrixLst: List[DenseMatrix[Double]]): List[FilterResult] = {
 
     require(observationLst.lengthCompare(squareRootProcessNoiseCovarianceLst.length) == 0)
     require(squareRootProcessNoiseCovarianceLst.lengthCompare(stateTransitionMatrixLst.length) == 0)
@@ -55,7 +57,9 @@ class SquareRootInformationFilter(targetModel: TargetModel,
       val observation = observationLst(idx)
       val squareRootProcessNoiseCovariance = squareRootProcessNoiseCovarianceLst(idx)
       val stateTransitionMatrix = stateTransitionMatrixLst(idx)
-      filterStep(observation, squareRootProcessNoiseCovariance, stateTransitionMatrix)
+      val invStateTransitionMatrix = invStateTransitionMatrixLst(idx)
+
+      filterStep(observation, squareRootProcessNoiseCovariance, stateTransitionMatrix, invStateTransitionMatrix)
     })).eval(FactoredGaussianDistribution(DenseVector.zeros(dim), DenseMatrix.zeros(dim, dim)))
 
   }
@@ -66,18 +70,21 @@ class SquareRootInformationFilter(targetModel: TargetModel,
     * @param observation                      a [[FactoredGaussianDistribution]] presents the observation
     * @param squareRootProcessNoiseCovariance refer to [[TargetModel.calculateSquareRootProcessNoiseCovariance]]
     * @param stateTransitionMatrix            refer to [[TargetModel.calculateStateTransitionMatrix]]
+    * @param invStateTransitionMatrix         refer to [[TargetModel.calculateInvStateTransitionMatrix]]
     * @return
     */
   def filterStep(observation: FactoredGaussianDistribution,
                  squareRootProcessNoiseCovariance: DenseMatrix[Double],
-                 stateTransitionMatrix: DenseMatrix[Double]): State[FactoredGaussianDistribution, FilterResult] =
+                 stateTransitionMatrix: DenseMatrix[Double],
+                 invStateTransitionMatrix: DenseMatrix[Double]): State[FactoredGaussianDistribution, FilterResult] =
     State[FactoredGaussianDistribution, FilterResult] {
 
       previousUpdatedStateEstimation: FactoredGaussianDistribution => {
 
         val (predictedStateEstimation, tilda_R_w, tilda_R_wx, tilda_z_w) = predictStep(previousUpdatedStateEstimation,
           squareRootProcessNoiseCovariance,
-          stateTransitionMatrix)
+          stateTransitionMatrix,
+          invStateTransitionMatrix)
 
         val updatedStateEstimation: FactoredGaussianDistribution = updateStep(predictedStateEstimation, observation)
 
@@ -97,11 +104,13 @@ class SquareRootInformationFilter(targetModel: TargetModel,
     * @param updatedStateEstimation           updated state estimation from previous iteration
     * @param squareRootProcessNoiseCovariance refer to [[TargetModel.calculateSquareRootProcessNoiseCovariance]]
     * @param stateTransitionMatrix            refer to [[TargetModel.calculateStateTransitionMatrix]]
+    * @param invStateTransitionMatrix         refer to [[TargetModel.calculateInvStateTransitionMatrix]]
     * @return the predicted state estimation
     */
   def predictStep(updatedStateEstimation: FactoredGaussianDistribution,
                   squareRootProcessNoiseCovariance: DenseMatrix[Double],
-                  stateTransitionMatrix: DenseMatrix[Double]): (FactoredGaussianDistribution, DenseMatrix[Double], DenseMatrix[Double], DenseVector[Double]) = {
+                  stateTransitionMatrix: DenseMatrix[Double],
+                  invStateTransitionMatrix: DenseMatrix[Double]): (FactoredGaussianDistribution, DenseMatrix[Double], DenseMatrix[Double], DenseVector[Double]) = {
 
     val z_w: DenseVector[Double] = DenseVector.zeros(dim)
     val R_w: DenseMatrix[Double] = DenseMatrix.eye(dim)
@@ -109,7 +118,7 @@ class SquareRootInformationFilter(targetModel: TargetModel,
     val z_0: DenseVector[Double] = updatedStateEstimation.zeta
     val R_0: DenseMatrix[Double] = updatedStateEstimation.R
 
-    val R_1d: DenseMatrix[Double] = R_0 * inv(stateTransitionMatrix)
+    val R_1d: DenseMatrix[Double] = R_0 * invStateTransitionMatrix
 
     val G: DenseMatrix[Double] = squareRootProcessNoiseCovariance
 

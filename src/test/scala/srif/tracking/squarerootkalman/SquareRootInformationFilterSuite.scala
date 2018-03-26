@@ -86,8 +86,9 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
       val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
       val (predictionError, updateError) = computeError(stateLst, results)
 
@@ -115,8 +116,9 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
       val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
       val (predictionError, updateError) = computeError(stateLst, results)
 
@@ -146,8 +148,9 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
       val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
       val (predictionError, updateError) = computeError(stateLst, results)
 
@@ -176,8 +179,9 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
     val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
     val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+    val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-    val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+    val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
     val (predictionError, updateError) = computeError(stateLst, results)
 
