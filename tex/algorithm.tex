@@ -1,0 +1,302 @@
+%%%%%%%%%%%%%%%%%%          gtlatex.tem       %%%%%%%%%%%%%%%%%%
+%
+%   Template for articles written in LaTeX for publication in
+%   G&T, G&TM and A&GT.  This template must be used with latex2e.  
+%   If you use BiBTeX then you can collect the bibliography style 
+%   file  gtart.bst  from
+%       https://msp.org/gtp/macros/gtart.bst
+%   instructions for using gtpart.cls are given in gtpartdoc.pdf,
+%   available at
+%       https://msp.org/gtp/macros/gtpartdoc.pdf
+%
+\documentclass[microtype]{gtpart}     % Basic GT/GTM/AGT style
+%
+%   The microtype option considerably improves document layout and
+%   will make your article more closely approximate the final
+%   published version. (This option requires the use of pdflatex;
+%   if you use latex instead, you can just remove the option.)
+%
+%   Uncomment one of the next three lines to obtain a full "mock-up"
+%   of a published article:
+%   A&GT:  \agtart     G&T:  \gtart   G&TM:  \gtmonart
+%
+%   NOTE:  Please do not place your article in a public place (eg
+%          on the arXiv) in "mock-up" form unless it has been accepted
+%          for publication in the relevant journal.
+%
+%\gtart  
+%\agtart
+%\gtmonart
+%
+%   Add necessary packages here.  Note that amsthm, amssymb and
+%   amsmath are already loaded, so there is no need to add any 
+%   of these.  Examples:
+%
+\usepackage{pinlabel}  %%% the recommended graphics+labelling package
+\usepackage{graphicx}  %%% the recommended graphics package
+\usepackage[all]{xy}
+\usepackage{amscd}
+\usepackage{hyperref}
+
+
+%%% Start of metadata
+
+\title{Algorithm Details}
+
+%  First author
+%
+\author{}
+\givenname{}
+\surname{}
+\address{}
+\email{}
+\urladdr{}
+
+%  Second author (uncomment if necessary)
+%
+%\author{}
+%\givenname{}
+%\surname{}
+%\address{}
+%\email{}
+%\urladdr{}
+%
+%  (Add a similar block for other authors)
+%
+%   Title and author both have running head options:
+%
+%   \title[Running head title]{Main title}
+%   \author[Running head author]{Author}
+%
+% give a separate \keyword and \subject line for each keyword/phrase or 
+% subject class eg \keyword{framed link} \subject{primary}{msc2010}{57M25}
+
+%\keyword{}
+%\subject{primary}{msc2010}{}
+%\subject{secondary}{msc2010}{}
+
+%  Fill in the reference number if your article is stored on the arXiv
+%  eg \arxivreference{math.GT/0512347} or \arxivreference{1203.4984}.
+%  The newer style reference numbers (with a period) do not require the
+%  prefix arxiv: or math.NT/ or anything else. Just the reference
+%  number is sufficient.
+
+\arxivreference{}
+
+%%% End of metadata
+
+%%% Start of user-defined macros %%%
+%
+%   Theorem-type environments.  There are two predefined styles :
+%
+%   \theoremstyle{plain} : for theorems, corollaries etc with heading 
+%   bold and left justified, optional note bracketed in roman type
+%   and statement in slanted type.  This is the default style.
+%
+%   \theoremstyle{definition} : (alias remark)  for definitions, remarks 
+%   etc with heading bold and left justified, optional note as before but
+%   with statement in roman type.
+%   
+%   Some sample  \newtheorem's  (delete these unless you need
+%   them and insert your own):
+%
+\newtheorem{thm}{Theorem}[section]    % Standard theorem environment
+\newtheorem{lem}[thm]{Lemma}          % Lemma environment with numbering 
+%                                     % consecutive to theorems
+\newtheorem*{zlem}{Zorn's Lemma}      % A special unnumbered lemma.
+%
+\theoremstyle{definition}
+\newtheorem{defn}[thm]{Definition}    % Definition environment with 
+%                                     % numbering consecutive to theorems
+\newtheorem*{rem}{Remark}             % Unnumbered environment for remarks.
+%
+%   Type your macros (\newcommand's etc) below.
+%
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+
+%%% End of user-defined macros %%%
+
+\begin{document}
+
+\begin{abstract}    % type your abstract below
+
+In this article, we describe the algorithm in this project.
+
+\end{abstract}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%   Start of main body of article
+
+\section{Introduction}
+
+Naive implementations of Kalman filters and smoothers have numerical instability issues.
+In this project, we implemented the square root formulation of the Kalman algorithm, which is more accurate and stable. 
+
+\section{Square Root Kalman Algorithm}
+
+In this section, we describe the square root Kalman algorithm described in \cite{bierman2006factorization}.
+
+Let $X$ be a Gaussian random variable with mean $m$ and covariance matrix $V$.
+The square root form of $X$ is given by $R$ and $z$ where
+\begin{align*}
+ (R^TR)^{-1} &= V, \\
+ Rm &= z.
+\end{align*}
+The square root formulation of the Kalman algorithms:
+\begin{itemize}
+	\item square root information filter and
+	\item square root information smoother
+\end{itemize}
+will be parametrized by Gaussian random variables in square root form.
+
+\subsection{Square Root Information Filter}
+
+Recall that in $j$th iteration, the true state $x_j$ is evolved from the state $x_{j-1}$ according to
+\begin{align}
+	x_j = \Phi_j x_{j-1} + Gw_j \label{eq:predict}
+\end{align}
+where
+\begin{itemize}
+	\item $\Phi_j$ is the nonsingular transition matrix and
+	\item $w_j$ is the process noise that are assumed to have zero mean and nonsingular covariance matrix 
+	$Q_w(j)=(R^T_w(j)R_w(j))^{-1}$.
+\end{itemize}
+An observation $z_j$ of the true state $x_j$ is made according to
+\begin{align*}
+	z_j = A x_j + v_j
+\end{align*}
+where $v_j \in N(0, I)$.
+
+\subsubsection{Prediction Step}
+
+Let $(\hat{R}_x(j-1), \hat{z}_x(j-1))$ be the square root form of the updated estimate in iteration $j-1$.
+The prediction step is to solve
+\begin{align*}
+	& \underset{x_j, w_j}{\text{minimize}} & &\norm{\hat{R}_x(j-1)x_{j-1} - \hat{z}_x(j-1)}^2 + \norm{R_w(j)w_j - z_w(j)}^2 \\
+	& \text{subject to} & & \autoref{eq:predict}.
+\end{align*}
+
+Noted that $x_{j-1} = \Phi^{-1}_j(x_j - Gw_j)$, the above minimization problem is equivalent to
+\begin{align*}
+	& \underset{x_j, w_j}{\text{minimize}} & &\norm{
+		\begin{pmatrix}
+		R_w(j) &0 \\
+		-R^d_x(j)G &R^d_x(j)
+		\end{pmatrix}
+		\begin{pmatrix}
+		w_j \\ x_j
+		\end{pmatrix} - \begin{pmatrix}
+		z_w(j) \\ \hat{z}_x(j-1)
+		\end{pmatrix}}^2
+\end{align*}
+which can be solved by using the QR decomposition
+\begin{align*}
+	\begin{pmatrix}
+		R_w(j) &0 &z_w(j) \\ 
+		-R^d_x(j)G &R^d_x(j) &\hat{z}_x(j-1)
+	\end{pmatrix} = Q
+	\begin{pmatrix}
+		\tilde{R}_w(j) &\tilde{R}_{wx}(j) &\tilde{z}_w(j) \\ 0 &\tilde{R}_x(j) &\tilde{z}_x(j)
+	\end{pmatrix}
+\end{align*}
+where
+\begin{itemize}
+	\item the right hand side is the QR decomposition of the left hand side,
+	\item $(R_w(j), z_w(j))$ is the prior estimate of $w_j$ in square root form,
+	\item $R^d_x(j)=\hat{R}_x(j-1)\Phi^{-1}_j$ and
+	\item $(\tilde{R}_x(j), \tilde{z}_x(j))$ is the predict estimate in square root form.
+\end{itemize}
+
+\subsubsection{Update Step}
+
+Let $(\tilde{R}_x(j), \tilde{z}_x(j))$ be the prior information obtained from prediction step, 
+the update step is to solve
+\begin{align*}
+	& \underset{x_j}{\text{minimize}} & &\norm{\tilde{R}_x(j)x_j - \tilde{z}_x(j)}^2 + \norm{Ax_j - z_j}^2.
+\end{align*}
+The above minimization problem can be rewritten as
+\begin{align*}
+	& \underset{x_j}{\text{minimize}} & &\norm{
+	\begin{pmatrix}
+	\tilde{R}_x(j) \\ \hat{R}_x(j)
+	\end{pmatrix}x_j - 
+	\begin{pmatrix}
+	\tilde{z}_x(j) \\  z_j
+	\end{pmatrix}}^2
+\end{align*}
+which can be solved by using the QR decomposition
+\begin{align*}
+	\begin{pmatrix}
+		\tilde{R}_x(j) &\tilde{z}_x(j) \\ 
+		A &z_j
+	\end{pmatrix} = Q
+	\begin{pmatrix}
+		\hat{R}_x(j) &\hat{z}_x(j) \\
+		0 &e_j
+	\end{pmatrix}
+\end{align*}
+where
+\begin{itemize}
+	\item the right hand side is the QR decomposition of the left hand side and
+	\item $(\hat{R}_x(j), \hat{z}_x(j))$ is the updated estimate in square root form.
+\end{itemize}
+
+\subsection{Square Root Information Smoother}
+
+Let $(R^*_x(j), z^*_x(j)$ be the smoothed estimate in iteration $j$.
+The smooth step is to solve
+\begin{align*}
+	& \underset{x_{j-1}, w_j}{\text{minimize}} & &\norm{\tilde{R}_w(j)w_j + \tilde{R}_{wx}(j)x_j - \tilde{z}_w(j)}^2 +
+	\norm{\tilde{R}_x(j)x_j - \tilde{z}_x(j)}^2 \\
+	& \text{subject to} & & \autoref{eq:predict}.
+\end{align*}
+Replacing $x_j$ by $\Phi_j x_{j-1} + Gw_j$, the above minimization problem is equivalent to
+\begin{align*}
+	& \underset{x_{j-1}, w_j}{\text{minimize}} & &\norm{
+		\begin{pmatrix}
+			\tilde{R}_w(j) + \tilde{R}_{wx}(j)G &\tilde{R}_{wx}(j)\Phi_j \\
+			R^*_x(j)G &R^*_x(j)\Phi_j
+		\end{pmatrix}
+		\begin{pmatrix}
+		w_j \\ x_{j-1}
+		\end{pmatrix} - 
+		\begin{pmatrix}
+			\tilde{z}_w(j) \\ z^*_x(j)
+		\end{pmatrix}}^2
+\end{align*}
+which can be solved by using the QR decomposition
+\begin{align*}
+	\begin{pmatrix}
+		\tilde{R}_w(j) + \tilde{R}_{wx}(j)G &\tilde{R}_{wx}(j)\Phi_j &\tilde{z}_w(j) \\
+		R^*_x(j)G &R^*_x(j)\Phi_j &z^*_x(j)
+	\end{pmatrix} = Q
+	\begin{pmatrix}
+		R^*_w(j) &R^*_{wx}(j) &z^*_w(j) \\
+		0 &R^*_x(j-1) &z^*_x(j-1)
+	\end{pmatrix}
+\end{align*}
+where
+\begin{itemize}
+	\item the right hand side is the QR decomposition of the left hand side and
+	\item $(R^*_x(j-1), z^*_x(j-1))$ is the smoothed estimate in square root form.
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%   End of main body of article
+%
+%                             References
+%
+%   BiBTeX users uncomment the following line:
+%
+\bibliographystyle{plain}
+\bibliography{cdata}
+%
+
+%\begin{thebibliography}
+
+%\end{thebibliography}
+
+\end{document}
+

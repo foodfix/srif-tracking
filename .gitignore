@@ -1,0 +1,9 @@
+project/target/
+target/
+.idea/
+*.aux
+*.bbl
+*.blg
+*.out
+*.gz
+*.log
