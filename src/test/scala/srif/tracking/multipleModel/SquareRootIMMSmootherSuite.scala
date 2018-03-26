@@ -5,11 +5,12 @@ import breeze.numerics.{exp, log}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
-import srif.tracking.UniModelTestDataGenerator.{getNormalizedVector, getRandomTransitionMatrix}
-import srif.tracking.{TargetModel, _}
+import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.{getNormalizedVector, getRandomTransitionMatrix}
 import srif.tracking.multipleModel.SquareRootIMMFilter.IMMFilterResult
 import srif.tracking.multipleModel.SquareRootIMMSmoother._
 import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootInformationSmoother}
+import srif.tracking.{TargetModel, _}
 
 import scala.util.Random
 
@@ -28,13 +29,10 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
 
   val targetModelLst: List[TargetModel] = List(model_0, model_1)
   val initialStateLst: List[DenseVector[Double]] = List(DenseVector(0.0, 5.0, 0.0, 5.0), DenseVector(0.0, 0.0))
-  val multipleModel = new MultipleModelStructure(2, 1.0)
 
   val modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]] = DenseMatrix(
     (DenseMatrix.eye[Double](model_0.stateDim), DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)).t),
     (DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)), DenseMatrix.eye[Double](model_1.stateDim)))
-
-  val projectionMatrixLst: List[DenseMatrix[Double]] = List(DenseMatrix.eye[Double](model_0.stateDim), DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)).t)
 
   val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
   val immFilter = new SquareRootIMMFilter(filters, modelStateProjectionMatrix, false)
@@ -44,7 +42,6 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
 
   def validateIMMSmootherResult(states: List[DenseVector[Double]],
                                 models: List[Int],
-                                observations: List[DenseVector[Double]],
                                 immFilterResult: List[IMMFilterResult],
                                 immSmootherResult: List[IMMSmootherResult],
                                 modelTol: Double,
@@ -58,20 +55,18 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
 
       val state = states(idx)
       val model = models(idx)
-      val observation = observations(idx)
 
       val filterStates: List[FactoredGaussianDistribution] = immFilterResult(idx).updateResultPerFilter.map(_.updatedStateEstimation)
       val filterStateProbabilities: List[Double] = immFilterResult(idx).updatedLogModeProbability.toArray.toList.map(math.exp)
       val filterModel: Int = argmax(immFilterResult(idx).updatedLogModeProbability)
       val filterFusedState = calculateGaussianMixtureDistribution(filterStates, filterStateProbabilities, modelStateProjectionMatrix(filterModel, ::).t.toArray.toList, filterModel)
-      val filterErrorVector = targetModelLst(filterModel).observationMatrix * filterFusedState.toGaussianDistribution.m - targetModelLst(model).observationMatrix * state
+      val filterErrorVector = modelStateProjectionMatrix(0, filterModel) * filterFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
 
       val smoothStates: List[FactoredGaussianDistribution] = immSmootherResult(idx).smoothResultPerSmoother.map(_.smoothedStateEstimation)
       val smoothProbabilities: List[Double] = immSmootherResult(idx).smoothedLogModeProbability.toArray.toList.map(math.exp)
       val smoothModel: Int = argmax(immSmootherResult(idx).smoothedLogModeProbability)
       val smoothFusedState = calculateGaussianMixtureDistribution(smoothStates, smoothProbabilities, modelStateProjectionMatrix(smoothModel, ::).t.toArray.toList, smoothModel)
-
-      val smoothErrorVector = targetModelLst(smoothModel).observationMatrix * smoothFusedState.toGaussianDistribution.m - targetModelLst(model).observationMatrix * state
+      val smoothErrorVector = modelStateProjectionMatrix(0, smoothModel) * smoothFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
 
       val filterStateError: Double = filterErrorVector.t * filterErrorVector
       val smoothStateError: Double = smoothErrorVector.t * smoothErrorVector
@@ -135,7 +130,7 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
 
     seeds.foreach(seed => {
 
-      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, projectionMatrixLst, seed)
+      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
@@ -152,7 +147,7 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
 
-      validateIMMSmootherResult(states, models, observations, immFilterResult, immSmootherResult, 0.05, 30, false)
+      validateIMMSmootherResult(states, models, immFilterResult, immSmootherResult, 0.05, 30, false)
 
     })
 
@@ -164,7 +159,7 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
 
     seeds.foreach(seed => {
 
-      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 0, initialStateLst, numOfEvents, multipleModel, observationStd, projectionMatrixLst, seed)
+      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 0, initialStateLst, numOfEvents, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
@@ -181,7 +176,7 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
 
-      validateIMMSmootherResult(states, models, observations, immFilterResult, immSmootherResult, 0.01, 100, false)
+      validateIMMSmootherResult(states, models, immFilterResult, immSmootherResult, 0.01, 100, false)
 
     })
 
@@ -193,7 +188,7 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
 
     seeds.foreach(seed => {
 
-      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, projectionMatrixLst, seed)
+      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
@@ -210,7 +205,7 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
 
-      validateIMMSmootherResult(states, models, observations, immFilterResult, immSmootherResult, 0.15, 100, false)
+      validateIMMSmootherResult(states, models, immFilterResult, immSmootherResult, 0.15, 100, false)
 
     })
 

@@ -4,8 +4,9 @@ import breeze.linalg.{DenseMatrix, DenseVector, norm}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator
 import srif.tracking.squarerootkalman.SquareRootInformationSmoother.SmoothResult
-import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel, UniModelTestDataGenerator}
+import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
 class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with LazyLogging {
 

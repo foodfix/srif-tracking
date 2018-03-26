@@ -35,7 +35,7 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
     val immFilterResult: List[IMMFilterResult] = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerSmootherLst, stateTransitionMatrixPerSmootherLst)
     val updatedLogModeProbabilityLst = immFilterResult.map(_.updatedLogModeProbability)
 
-    val initialSmoothResultPerSmoother: List[SmoothResult] = immFilterResult.last.updateResultPerFilter.map(x => SmoothResult(x.updatedStateEstimation, x.tilda_R_wx, x.tilda_R_w, x.tilda_z_w))
+    val initialSmoothResultPerSmoother: List[SmoothResult] = immFilterResult.last.updateResultPerFilter.map(x => SmoothResult(x.updatedStateEstimation))
 
     val immSmootherResult: List[IMMSmootherResult] = sequence(List.range(1, numOfTimeSteps).map(idx => {
       (immFilterResult(idx),

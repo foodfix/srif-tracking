@@ -4,10 +4,11 @@ import breeze.linalg.{*, DenseMatrix, DenseVector, argmax, sum}
 import breeze.numerics.{exp, log}
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
-import srif.tracking.UniModelTestDataGenerator._
-import srif.tracking.{TargetModel, _}
+import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator._
 import srif.tracking.multipleModel.SquareRootIMMFilter.{IMMFilterResult, _}
 import srif.tracking.squarerootkalman.SquareRootInformationFilter
+import srif.tracking.{TargetModel, _}
 
 import scala.util.Random
 
@@ -32,8 +33,6 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
     (DenseMatrix.eye[Double](model_0.stateDim), DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)).t),
     (DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)), DenseMatrix.eye[Double](model_1.stateDim)))
 
-  val projectionMatrixLst: List[DenseMatrix[Double]] = List(DenseMatrix.eye[Double](model_0.stateDim), DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)).t)
-
   val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
   val immFilter = new SquareRootIMMFilter(filters, modelStateProjectionMatrix, false)
 
@@ -51,7 +50,7 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
       val filterStateProbabilities: List[Double] = immFilterResult(idx).updatedLogModeProbability.toArray.toList.map(math.exp)
       val filterModel: Int = argmax(immFilterResult(idx).updatedLogModeProbability)
       val filterFusedState = calculateGaussianMixtureDistribution(filterStates, filterStateProbabilities, modelStateProjectionMatrix(filterModel, ::).t.toArray.toList, filterModel)
-      val filterErrorVector = targetModelLst(filterModel).observationMatrix * filterFusedState.toGaussianDistribution.m - targetModelLst(model).observationMatrix * state
+      val filterErrorVector = modelStateProjectionMatrix(0, filterModel) * filterFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
 
       val filterStateError: Double = filterErrorVector.t * filterErrorVector
       val filterModelScore: Double = filterStateProbabilities(model)
@@ -101,7 +100,7 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
     seeds.foreach(seed => {
 
-      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, projectionMatrixLst, seed)
+      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
@@ -129,7 +128,7 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
     seeds.foreach(seed => {
 
-      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 0, initialStateLst, numOfEvents, multipleModel, observationStd, projectionMatrixLst, seed)
+      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 0, initialStateLst, numOfEvents, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
@@ -157,7 +156,7 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
     seeds.foreach(seed => {
 
-      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, projectionMatrixLst, seed)
+      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
