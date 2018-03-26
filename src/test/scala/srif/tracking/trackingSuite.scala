@@ -4,7 +4,7 @@ import breeze.linalg.{DenseMatrix, DenseVector, max}
 import breeze.numerics.abs
 import breeze.stats.distributions.MultivariateGaussian
 import org.scalatest.{FlatSpec, Matchers}
-import srif.tracking.UniModelTestDataGenerator.getRandomGaussianDistribution
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.getRandomGaussianDistribution
 
 import scala.util.Random
 

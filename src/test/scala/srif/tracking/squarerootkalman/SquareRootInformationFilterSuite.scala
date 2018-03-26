@@ -5,9 +5,10 @@ import breeze.stats.distributions.MultivariateGaussian
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
-import srif.tracking.UniModelTestDataGenerator.getRandomGaussianDistribution
-import srif.tracking.{TargetModel, _}
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.getRandomGaussianDistribution
 import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
+import srif.tracking.{TargetModel, _}
 
 import scala.util.Random
 

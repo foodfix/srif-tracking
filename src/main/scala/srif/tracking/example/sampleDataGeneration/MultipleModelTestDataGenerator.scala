@@ -1,7 +1,8 @@
-package srif.tracking
+package srif.tracking.example.sampleDataGeneration
 
 import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.stats.distributions.{MultivariateGaussian, RandBasis}
+import srif.tracking.TargetModel
 import srif.tracking.multipleModel.MultipleModelStructure
 
 import scala.util.Random
@@ -14,7 +15,7 @@ object MultipleModelTestDataGenerator {
             numOfEvents: Int,
             multipleModel: MultipleModelStructure,
             observationStd: Double,
-            projectionMatrixLst: List[DenseMatrix[Double]],
+            modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
             seed: Int): (List[Int], List[DenseVector[Double]], List[DenseVector[Double]], List[Double]) = {
 
     val r: Random = new scala.util.Random(seed)
@@ -33,10 +34,8 @@ object MultipleModelTestDataGenerator {
 
         val newState: DenseVector[Double] =
           if (processNoise.forall(_ == 0))
-            projectionMatrixLst(newModel).t * (projectionMatrixLst(newModel) * stateTransitionMatrix * projectionMatrixLst(newModel).t *
-              projectionMatrixLst(previousModel) * previousState)
-          else projectionMatrixLst(newModel).t * (projectionMatrixLst(newModel) * stateTransitionMatrix * projectionMatrixLst(newModel).t *
-            projectionMatrixLst(previousModel) * previousState) +
+            stateTransitionMatrix * modelStateProjectionMatrix(newModel, previousModel) * previousState
+          else stateTransitionMatrix * modelStateProjectionMatrix(newModel, previousModel) * previousState +
             MultivariateGaussian(DenseVector.zeros[Double](targetModelLst(newModel).stateDim), processNoise)(RandBasis.withSeed(r.nextInt)).draw
 
         (newModel, newState)

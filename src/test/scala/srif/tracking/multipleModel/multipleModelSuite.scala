@@ -3,7 +3,7 @@ package srif.tracking.multipleModel
 import breeze.linalg.{DenseMatrix, max}
 import breeze.numerics.abs
 import org.scalatest.{FlatSpec, Matchers}
-import srif.tracking.UniModelTestDataGenerator.getRandomGaussianDistribution
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.getRandomGaussianDistribution
 import srif.tracking.minModeProbability
 
 import scala.util.Random
