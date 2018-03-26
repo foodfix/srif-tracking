@@ -41,7 +41,7 @@ class SquareRootInformationSmoother(targetModel: TargetModel,
         case (filterResult, squareRootProcessNoiseCovariance, stateTransitionMatrix) =>
           smoothStep(filterResult, squareRootProcessNoiseCovariance, stateTransitionMatrix)
       }).reverse
-    ).eval(filterResultLst.last.updatedStateEstimation).reverse ::: List(SmoothResult(filterResultLst.last.updatedStateEstimation, filterResultLst.last.tilda_R_wx, filterResultLst.last.tilda_R_w, filterResultLst.last.tilda_z_w))
+    ).eval(filterResultLst.last.updatedStateEstimation).reverse ::: List(SmoothResult(filterResultLst.last.updatedStateEstimation))
 
   }
 
@@ -87,17 +87,14 @@ class SquareRootInformationSmoother(targetModel: TargetModel,
 
         val smoothedStateEstimate: FactoredGaussianDistribution = FactoredGaussianDistribution(z_x0, R_x0)
 
-        (smoothedStateEstimate, SmoothResult(smoothedStateEstimate, star_R_wx, star_R_w, star_z_w))
+        (smoothedStateEstimate, SmoothResult(smoothedStateEstimate))
     }
 
 }
 
 object SquareRootInformationSmoother {
 
-  case class SmoothResult(smoothedStateEstimation: FactoredGaussianDistribution,
-                          star_R_wx: DenseMatrix[Double],
-                          star_R_w: DenseMatrix[Double],
-                          star_z_w: DenseVector[Double])
+  case class SmoothResult(smoothedStateEstimation: FactoredGaussianDistribution)
 
 }
 
