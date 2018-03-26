@@ -84,7 +84,7 @@ object immExample {
       val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      outputSampleResult(states, models, immFilterResult, immSmootherResult, 0.15, 100, false, modelStateProjectionMatrix, numOfEventsPerTestCase)
+      outputSampleResult(states, models, immFilterResult, immSmootherResult, 0.15, 100, modelStateProjectionMatrix, numOfEventsPerTestCase)
 
     })
 
@@ -96,7 +96,6 @@ object immExample {
                          immSmootherResult: List[IMMSmootherResult],
                          modelTol: Double,
                          stateTol: Double,
-                         isDebugEnabled: Boolean = false,
                          modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
                          numOfEvents: Int): Unit = {
 
