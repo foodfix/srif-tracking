@@ -51,12 +51,12 @@ class SquareRootInformationFilter(targetModel: TargetModel,
     require(observationLst.lengthCompare(squareRootProcessNoiseCovarianceLst.length) == 0)
     require(squareRootProcessNoiseCovarianceLst.lengthCompare(stateTransitionMatrixLst.length) == 0)
 
-    sequence(
-      (observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst).zipped.map({
-        case (observation, squareRootProcessNoiseCovariance, stateTransitionMatrix) =>
-          filterStep(observation, squareRootProcessNoiseCovariance, stateTransitionMatrix)
-      })
-    ).eval(FactoredGaussianDistribution(DenseVector.zeros(dim), DenseMatrix.zeros(dim, dim)))
+    sequence(List.range(0, observationLst.length).map(idx => {
+      val observation = observationLst(idx)
+      val squareRootProcessNoiseCovariance = squareRootProcessNoiseCovarianceLst(idx)
+      val stateTransitionMatrix = stateTransitionMatrixLst(idx)
+      filterStep(observation, squareRootProcessNoiseCovariance, stateTransitionMatrix)
+    })).eval(FactoredGaussianDistribution(DenseVector.zeros(dim), DenseMatrix.zeros(dim, dim)))
 
   }
 
