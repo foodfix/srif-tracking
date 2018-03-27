@@ -16,12 +16,12 @@
 
 package srif.tracking.squarerootkalman
 
-import breeze.linalg.{DenseMatrix, DenseVector, norm}
+import breeze.linalg.{DenseMatrix, DenseVector}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
 import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator
-import srif.tracking.squarerootkalman.SquareRootInformationSmoother.SmoothResult
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.calculateEstimationError
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
 class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with LazyLogging {
@@ -29,34 +29,6 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
   val seeds: List[Int] = List.range(0, 10)
   val numOfEvents: Int = 1000
   val observationStd: Double = 100.0
-
-  /**
-    * Compute the prediction and update error.
-    *
-    * @param stateLst       list of true states
-    * @param results        the smoothed results
-    * @param isDebugEnabled control is debug information is logged, default is false
-    * @return mean of prediction error and mean of update error
-    */
-  def computeError(stateLst: List[DenseVector[Double]],
-                   results: List[SmoothResult],
-                   isDebugEnabled: Boolean = false): Double = {
-
-    val (totalSmoothError, count) = (stateLst, results).zipped.map({
-      case (state, result) =>
-        val smoothedResult = result.smoothedStateEstimation.toGaussianDistribution
-
-        val smoothError: Double = norm(state - smoothedResult.m)
-
-        if (isDebugEnabled) {
-          logger.debug(s"The real state is \n $state")
-          logger.debug(s"The smoothed state estimation mean is \n ${smoothedResult.m} with error $smoothError.")
-        }
-        (smoothError, 1.0)
-    }).reduce((x1, x2) => (x1._1 + x2._1, x1._2 + x2._2))
-
-    totalSmoothError / count
-  }
 
   "SquareRootInformationSmoother" should "tracks target moving in constant speed." in {
 
@@ -82,10 +54,10 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
       val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-      val smoothError = computeError(stateLst, results)
+      val smoothError = calculateEstimationError(results.map(_.smoothedStateEstimation), stateLst)
 
       results.length should be(numOfEvents)
-      smoothError should be <= 55.0
+      smoothError should be <= 55.0 * 55.0
 
     })
   }
@@ -112,10 +84,10 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
       val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-      val smoothError = computeError(stateLst, results)
+      val smoothError = calculateEstimationError(results.map(_.smoothedStateEstimation), stateLst)
 
       results.length should be(numOfEvents)
-      smoothError should be <= 16.0
+      smoothError should be <= 20.0 * 20.0
 
     })
 
@@ -143,10 +115,10 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
       val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-      val smoothError = computeError(stateLst, results)
+      val smoothError = calculateEstimationError(results.map(_.smoothedStateEstimation), stateLst)
 
       results.length should be(numOfEvents)
-      smoothError should be <= 7.0
+      smoothError should be <= 7.0 * 7.0
 
     })
 
@@ -173,10 +145,10 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
     val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-    val smoothError = computeError(stateLst, results)
+    val smoothError = calculateEstimationError(results.map(_.smoothedStateEstimation), stateLst)
 
     results.length should be(numOfEvents)
-    smoothError should be <= 7.0
+    smoothError should be <= 7.0 * 7.0
 
   }
 
