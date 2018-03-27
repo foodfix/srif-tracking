@@ -26,7 +26,7 @@ object UniModelTestDataGenerator {
 
   def calculateEstimationError(estimatedStates: List[FactoredGaussianDistribution],
                                states: List[DenseVector[Double]],
-                               dropLeft: Int = 0, dropRight: Int): Double = {
+                               dropLeft: Int = 0, dropRight: Int = 0): Double = {
 
     require(estimatedStates.length == states.length)
 
