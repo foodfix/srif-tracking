@@ -16,14 +16,13 @@
 
 package srif.tracking.squarerootkalman
 
-import breeze.linalg.{DenseMatrix, DenseVector, norm}
+import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.stats.distributions.MultivariateGaussian
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
 import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator
-import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.getRandomGaussianDistribution
-import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.{calculateEstimationError, getRandomGaussianDistribution}
 import srif.tracking.{TargetModel, _}
 
 import scala.util.Random
@@ -33,39 +32,6 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
   val seeds: List[Int] = List.range(0, 10)
   val numOfEvents: Int = 1000
   val observationStd: Double = 100.0
-
-  /**
-    * Compute the prediction and update error.
-    *
-    * @param stateLst       list of true states
-    * @param results        the filter results
-    * @param isDebugEnabled control is debug information is logged, default is false
-    * @return mean of prediction error and mean of update error
-    */
-  def computeError(stateLst: List[DenseVector[Double]],
-                   results: List[FilterResult],
-                   isDebugEnabled: Boolean = false): (Double, Double) = {
-
-    val (totalPredictionError, totalUpdateError, count) = (stateLst, results).zipped.drop(numOfEvents / 10).map({
-      case (state, result) =>
-        val predictedResult = result.predictedStateEstimation.toGaussianDistribution
-        val updatedResult = result.updatedStateEstimation.toGaussianDistribution
-
-        val predictionError: Double = norm(state - predictedResult.m)
-        val updateError: Double = norm(state - updatedResult.m)
-
-        if (isDebugEnabled) {
-          logger.debug(s"The real state is \n $state")
-          logger.debug(s"The Predicted state estimation mean is \n ${predictedResult.m} with error $predictionError.")
-          logger.debug(s"The updated state estimation mean is \n ${updatedResult.m} with error $updateError.")
-        }
-
-        (predictionError, updateError, 1.0)
-    }).reduce((x1, x2) => (x1._1 + x2._1, x1._2 + x2._2, x1._3 + x2._3))
-
-    (totalPredictionError / count, totalUpdateError / count)
-  }
-
 
   "SquareRootInformationFilter" should "tracks target moving in constant speed." in {
 
@@ -86,13 +52,14 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
       val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-      val (predictionError, updateError) = computeError(stateLst, results)
+      val updateError = calculateEstimationError(results.map(_.updatedStateEstimation), stateLst, dropLeft = 1)
 
-      predictionError should be <= 130.0
-      updateError should be <= 95.0
+      results.length should be(numOfEvents)
+      updateError should be <= 95.0 * 95.0
 
     })
   }
@@ -115,13 +82,14 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
       val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-      val (predictionError, updateError) = computeError(stateLst, results)
+      val updateError = calculateEstimationError(results.map(_.updatedStateEstimation), stateLst, dropLeft = 1)
 
-      predictionError should be <= 25.0
-      updateError should be <= 23.0
+      results.length should be(numOfEvents)
+      updateError should be <= 30.0 * 30.0
 
     })
 
@@ -146,13 +114,14 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
       val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-      val (predictionError, updateError) = computeError(stateLst, results)
+      val updateError = calculateEstimationError(results.map(_.updatedStateEstimation), stateLst, dropLeft = 1)
 
-      predictionError should be <= 11.0
-      updateError should be <= 11.0
+      results.length should be(numOfEvents)
+      updateError should be <= 25.0 * 25.0
 
     })
 
@@ -176,14 +145,14 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
     val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
     val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+    val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-    val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst)
+    val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-    val (predictionError, updateError) = computeError(stateLst, results)
+    val updateError = calculateEstimationError(results.map(_.updatedStateEstimation), stateLst, dropLeft = 1)
 
-    predictionError should be <= 11.0
-    updateError should be <= 11.0
-
+    results.length should be(numOfEvents)
+    updateError should be <= 15.0 * 15.0
   }
 
   "computeLogObservationProbability" should "compute the likelihood of observation" in {

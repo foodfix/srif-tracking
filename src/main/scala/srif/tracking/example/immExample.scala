@@ -77,11 +77,14 @@ object immExample {
       val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
         f => stepSizeLst.map(f.getTargetModel.calculateStateTransitionMatrix)
       ).transpose
+      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
+        f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
+      ).transpose
 
-      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
-      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst)
+      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      outputSampleResult(states, models, immFilterResult, immSmootherResult, 0.15, 100, false, modelStateProjectionMatrix, numOfEventsPerTestCase)
+      outputSampleResult(states, models, immFilterResult, immSmootherResult, 0.15, 100, modelStateProjectionMatrix, numOfEventsPerTestCase)
 
     })
 
@@ -93,7 +96,6 @@ object immExample {
                          immSmootherResult: List[IMMSmootherResult],
                          modelTol: Double,
                          stateTol: Double,
-                         isDebugEnabled: Boolean = false,
                          modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
                          numOfEvents: Int): Unit = {
 
