@@ -34,12 +34,10 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
 
     val model: TargetModel = ConstantVelocityModel(1.0)
     val initialState: DenseVector[Double] = DenseVector(0.0, 5.0, 0.0, 5.0)
+    val smoother = new SquareRootInformationSmoother(model, false)
 
     seeds.foreach(seed => {
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, observationStd, seed)
-
-
-      val smoother = new SquareRootInformationSmoother(model, false)
 
       val observationLst: List[FactoredGaussianDistribution] = observationVectorLst.map(
         x => {
@@ -65,11 +63,10 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
   it should "track stationary target with non-zero process noise." in {
     val model: TargetModel = ConstantPositionModel(1.0)
     val initialState: DenseVector[Double] = DenseVector(0.0, 0.0)
+    val smoother = new SquareRootInformationSmoother(model, false)
 
     seeds.foreach(seed => {
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, observationStd, seed)
-
-      val smoother = new SquareRootInformationSmoother(model, false)
 
       val observationLst: List[FactoredGaussianDistribution] = observationVectorLst.map(
         x => {
@@ -96,11 +93,10 @@ class SquareRootInformationSmootherSuite extends FlatSpec with Matchers with Laz
   it should "track stationary target with zero process noise." in {
     val model: TargetModel = ConstantPositionModel(0.0)
     val initialState: DenseVector[Double] = DenseVector(0.0, 0.0)
+    val smoother = new SquareRootInformationSmoother(model, false)
 
     seeds.foreach(seed => {
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, observationStd, seed)
-
-      val smoother = new SquareRootInformationSmoother(model, false)
 
       val observationLst: List[FactoredGaussianDistribution] = observationVectorLst.map(
         x => {
