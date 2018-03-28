@@ -151,11 +151,9 @@ The square root formulation of the Kalman algorithms:
 \end{itemize}
 will be parametrized by Gaussian random variables in square root form.
 
-\subsection{Square Root Information Filter}
-
 Recall that in $j$th iteration, the true state $x_j$ is evolved from the state $x_{j-1}$ according to
 \begin{align}
-	x_j = \Phi_j x_{j-1} + Gw_j \label{eq:predict}
+x_j = \Phi_j x_{j-1} + Gw_j \label{eq:predict}
 \end{align}
 where
 \begin{itemize}
@@ -165,16 +163,24 @@ where
 \end{itemize}
 An observation $z_j$ of the true state $x_j$ is made according to
 \begin{align*}
-	z_j = A x_j + v_j
+	&z_j = A x_j + v_j & &\text{for } 1\leq j \leq K
 \end{align*}
 where $v_j \in N(0, I)$.
+
+\subsection{Square Root Information Filter}
+
+A filtering problem is to solve
+\begin{align*}
+& \underset{x_T}{\text{minimize}} & & \norm{\tilde{R}_x(1)x_1 - \tilde{z}_x(1)} + \sum_{j=1}^{T}\norm{Ax_j - z_j}^2 \\
+& \text{subject to} & & \autoref{eq:predict}.
+\end{align*}
 
 \subsubsection{Prediction Step}
 
 Let $(\hat{R}_x(j-1), \hat{z}_x(j-1))$ be the square root form of the updated estimate in iteration $j-1$.
 The prediction step is to solve
 \begin{align*}
-	& \underset{x_j, w_j}{\text{minimize}} & &\norm{\hat{R}_x(j-1)x_{j-1} - \hat{z}_x(j-1)}^2 + \norm{R_w(j)w_j - z_w(j)}^2 \\
+	& \underset{x_j}{\text{minimize}} & &\norm{\hat{R}_x(j-1)x_{j-1} - \hat{z}_x(j-1)}^2 + \norm{R_w(j)w_j - z_w(j)}^2 \\
 	& \text{subject to} & & \autoref{eq:predict}.
 \end{align*}
 
@@ -245,10 +251,19 @@ where
 
 \subsection{Square Root Information Smoother}
 
+A smoothing problem is to solve
+\begin{align*}
+& \underset{x_k}{\text{minimize}} & & \norm{\tilde{R}_x(1)x_1 - \tilde{z}_x(1)} + \sum_{j=1}^{K}\norm{Ax_j - z_j}^2 \\
+& \text{subject to} & & \autoref{eq:predict}.
+\end{align*}
+for $1\leq k \leq T$.
+
+\subsubsection{Smooth Step}
+
 Let $(R^*_x(j), z^*_x(j)$ be the smoothed estimate in iteration $j$.
 The smooth step is to solve
 \begin{align*}
-	& \underset{x_{j-1}, w_j}{\text{minimize}} & &\norm{\tilde{R}_w(j)w_j + \tilde{R}_{wx}(j)x_j - \tilde{z}_w(j)}^2 +
+	& \underset{x_{j-1}}{\text{minimize}} & &\norm{\tilde{R}_w(j)w_j + \tilde{R}_{wx}(j)x_j - \tilde{z}_w(j)}^2 +
 	\norm{\tilde{R}_x(j)x_j - \tilde{z}_x(j)}^2 \\
 	& \text{subject to} & & \autoref{eq:predict}.
 \end{align*}
