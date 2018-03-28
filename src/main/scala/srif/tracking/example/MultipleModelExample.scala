@@ -25,7 +25,7 @@ import srif.tracking.multipleModel.{MultipleModelStructure, SquareRootIMMFilter,
 import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootInformationSmoother}
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
-object immExample {
+object MultipleModelExample {
 
   def main(args: Array[String]): Unit = {
 

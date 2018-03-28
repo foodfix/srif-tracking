@@ -17,7 +17,7 @@ We developed square-root IMM model filter and smoother based on the classical IM
 
 ### How It Works
 
-You can find an example in [here](src/main/scala/srif/tracking/example/immExample.scala).
+You can find an example in [here](src/main/scala/srif/tracking/example/MultipleModelExample.scala).
 
 ### License
 
