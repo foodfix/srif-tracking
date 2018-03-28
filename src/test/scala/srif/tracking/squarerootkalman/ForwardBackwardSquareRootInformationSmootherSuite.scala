@@ -17,27 +17,24 @@
 package srif.tracking.squarerootkalman
 
 import breeze.linalg.{DenseMatrix, DenseVector}
-import breeze.stats.distributions.MultivariateGaussian
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
 import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator
-import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.{calculateEstimationError, getRandomGaussianDistribution}
-import srif.tracking.{TargetModel, _}
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.calculateEstimationError
+import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
-import scala.util.Random
-
-class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyLogging {
-
+class ForwardBackwardSquareRootInformationSmootherSuite extends FlatSpec with Matchers with LazyLogging {
   val seeds: List[Int] = List.range(0, 10)
   val numOfEvents: Int = 1000
   val observationStd: Double = 100.0
 
-  "SquareRootInformationFilter" should "tracks target moving in constant speed." in {
+  "SquareRootInformationSmoother" should "tracks target moving in constant speed." in {
 
     val model: TargetModel = ConstantVelocityModel(1.0)
     val initialState: DenseVector[Double] = DenseVector(0.0, 5.0, 0.0, 5.0)
-    val filter = new SquareRootInformationFilter(model, false)
+
+    val smoother = new ForwardBackwardSquareRootInformationSmoother(model, false)
 
     seeds.foreach(seed => {
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, observationStd, seed)
@@ -53,12 +50,12 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
       val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
+      val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-      val updateError = calculateEstimationError(results.map(_.updatedStateEstimation), stateLst, dropLeft = 1)
+      val smoothError = calculateEstimationError(results.map(_.smoothedStateEstimation), stateLst)
 
       results.length should be(numOfEvents)
-      updateError should be <= 95.0 * 95.0
+      smoothError should be <= 55.0 * 55.0
 
     })
   }
@@ -66,7 +63,8 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
   it should "track stationary target with non-zero process noise." in {
     val model: TargetModel = ConstantPositionModel(1.0)
     val initialState: DenseVector[Double] = DenseVector(0.0, 0.0)
-    val filter = new SquareRootInformationFilter(model, false)
+
+    val smoother = new ForwardBackwardSquareRootInformationSmoother(model, false)
 
     seeds.foreach(seed => {
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, observationStd, seed)
@@ -82,12 +80,12 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
       val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
+      val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-      val updateError = calculateEstimationError(results.map(_.updatedStateEstimation), stateLst, dropLeft = 1)
+      val smoothError = calculateEstimationError(results.map(_.smoothedStateEstimation), stateLst)
 
       results.length should be(numOfEvents)
-      updateError should be <= 30.0 * 30.0
+      smoothError should be <= 20.0 * 20.0
 
     })
 
@@ -96,7 +94,8 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
   it should "track stationary target with zero process noise." in {
     val model: TargetModel = ConstantPositionModel(0.0)
     val initialState: DenseVector[Double] = DenseVector(0.0, 0.0)
-    val filter = new SquareRootInformationFilter(model, false)
+
+    val smoother = new ForwardBackwardSquareRootInformationSmoother(model, false)
 
     seeds.foreach(seed => {
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, observationStd, seed)
@@ -112,12 +111,12 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
       val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
       val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-      val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
+      val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-      val updateError = calculateEstimationError(results.map(_.updatedStateEstimation), stateLst, dropLeft = 1)
+      val smoothError = calculateEstimationError(results.map(_.smoothedStateEstimation), stateLst)
 
       results.length should be(numOfEvents)
-      updateError should be <= 25.0 * 25.0
+      smoothError should be <= 7.0 * 7.0
 
     })
 
@@ -129,7 +128,7 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
     val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, 0.0, 0)
 
-    val filter = new SquareRootInformationFilter(model, false)
+    val smoother = new SquareRootInformationSmoother(model, false)
 
     val observationLst: List[FactoredGaussianDistribution] = observationVectorLst.map(
       x => {
@@ -142,30 +141,12 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
     val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
     val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
-    val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
+    val results = smoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-    val updateError = calculateEstimationError(results.map(_.updatedStateEstimation), stateLst, dropLeft = 1)
+    val smoothError = calculateEstimationError(results.map(_.smoothedStateEstimation), stateLst)
 
     results.length should be(numOfEvents)
-    updateError should be <= 15.0 * 15.0
+    smoothError should be <= 7.0 * 7.0
+
   }
-
-  "computeLogObservationProbability" should "compute the likelihood of observation" in {
-    val r: Random = new scala.util.Random(0)
-
-    List.range(0, 100).foreach(_ => {
-      val x = getRandomGaussianDistribution(2, 10, r)
-      val y = getRandomGaussianDistribution(2, 10, r)
-      val m = DenseMatrix.eye[Double](2)
-
-      val measurementResidual: FactoredGaussianDistribution =
-        sumFactoredGaussianDistribution(y.toFactoredGaussianDistribution, x.toFactoredGaussianDistribution, -m)._1
-
-      SquareRootInformationFilter.computeLogObservationProbability(y.toFactoredGaussianDistribution, x.toFactoredGaussianDistribution, m) should be(
-        MultivariateGaussian(measurementResidual.toGaussianDistribution.m, measurementResidual.toGaussianDistribution.V).logPdf(DenseVector(0.0, 0.0)) +- 1e-8
-      )
-
-    })
-  }
-
 }
