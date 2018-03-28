@@ -303,10 +303,46 @@ where
 	\item $(R^*_x(k-1), z^*_x(k-1))$ is the smoothed estimate in square root form.
 \end{itemize}
 
-\section{Square Root IMM}
+\section{Square Root IMM Algorithm}
 
 Let $M_k$ be the model in effect during the sampling period ending at time $k$.
- 
+The event that model $j$ $(j=1,\ldots,n)$ is in effect during the sampling period ending at time $k$ will be denoted by $M^j_k$.
+
+\subsection{Square Root IMM Filter}
+
+When applying the classical IMM filtering, attentions are needed for the followings:
+\begin{itemize}
+	\item mixing the state estimates and
+	\item model likelihood computation.
+\end{itemize}
+
+\subsubsection{Mixing The State Estimates}
+
+\begin{prop}
+	Let $a$, $b$ and $c$ be multivariate Gaussian distribution with square root form $(R_a, z_a)$, $(R_b, z_b)$ and $(R_c, z_c)$ respectively.
+	Suppose that $c = a + Ab$ for some matrix $A$. Then
+	\begin{align*}
+		\begin{pmatrix}
+			R_b &0 &z_b \\
+			-R_aA &R_a &z_a
+		\end{pmatrix} = Q\begin{pmatrix}
+			- &- &-\\
+			0 &R_c &z_c
+		\end{pmatrix}
+	\end{align*}
+	the right hand side is the QR decomposition of the left hand side.
+	Moreover,
+	\begin{align*}
+		&Q^T\begin{pmatrix}
+			0 \\ z_a
+		\end{pmatrix} = R_c m_a,
+		&&Q^T\begin{pmatrix}
+		z_b \\ 0
+		\end{pmatrix} = R_c m_b.
+	\end{align*}
+\end{prop}
+
+\subsubsection{Model Likelihood Computation}
 
 %%%%%%%%%%%%%%%%%%%%   End of main body of article
 %
