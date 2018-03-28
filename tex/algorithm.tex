@@ -132,7 +132,11 @@ In this article, we describe the algorithm in this project.
 \section{Introduction}
 
 Naive implementations of Kalman filters and smoothers have numerical instability issues.
-In this project, we implemented the square root formulation of the Kalman algorithm, which is more accurate and stable. 
+In this project, the square root formulation of the Kalman algorithm is implemented, which is more accurate and stable. 
+
+In case the dynamics are presented by multiple models,
+an approach to the multiple model fixed interval smoothing problem for the square root Kalman algorithms is examined.
+The approach is based on the interacting multiple models (IMM), except that we consider the square root Kalman algorithms.
 
 \section{Square Root Kalman Algorithm}
 
