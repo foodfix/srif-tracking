@@ -21,3 +21,6 @@ libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
 
 // https://mvnrepository.com/artifact/org.scalatest/scalatest
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.4" % Test
+
+// https://mvnrepository.com/artifact/org.vegas-viz/vegas
+libraryDependencies += "org.vegas-viz" %% "vegas" % "0.3.11"
