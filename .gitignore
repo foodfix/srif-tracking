@@ -7,3 +7,4 @@ target/
 *.out
 *.gz
 *.log
+sampleResults/
