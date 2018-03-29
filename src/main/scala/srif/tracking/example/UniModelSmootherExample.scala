@@ -18,8 +18,8 @@ package srif.tracking.example
 
 import breeze.linalg.{DenseMatrix, DenseVector}
 import srif.tracking.TargetModel.ConstantVelocityModel
+import srif.tracking.example.miscTools.UniModel._
 import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator
-import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.calculateEstimationError
 import srif.tracking.squarerootkalman.SquareRootInformationSmoother.SmoothResult
 import srif.tracking.squarerootkalman.{ForwardBackwardSquareRootInformationSmoother, SquareRootInformationSmoother}
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
@@ -58,6 +58,8 @@ object UniModelSmootherExample {
       val forwardBackwardSmootherResult: List[SmoothResult] = forwardBackwardSmoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
       outputSampleResult(stateLst, smootherResult, forwardBackwardSmootherResult, numOfEventsPerTestCase)
+      writeToCSV(stateLst, observationVectorLst, smootherResult.map(_.smoothedStateEstimation), s"$sampleResultFolder/smooth_result_$seed.csv")
+      writeToCSV(stateLst, observationVectorLst, forwardBackwardSmootherResult.map(_.smoothedStateEstimation), s"$sampleResultFolder/forward_backward_smooth_result_$seed.csv")
 
     })
 

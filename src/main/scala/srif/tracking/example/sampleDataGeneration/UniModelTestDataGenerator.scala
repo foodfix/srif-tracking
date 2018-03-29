@@ -24,19 +24,6 @@ import scala.util.Random
 
 object UniModelTestDataGenerator {
 
-  def calculateEstimationError(estimatedStates: List[FactoredGaussianDistribution],
-                               states: List[DenseVector[Double]],
-                               dropLeft: Int = 0, dropRight: Int = 0): Double = {
-
-    require(estimatedStates.length == states.length)
-
-    (estimatedStates, states).zipped.toList.dropRight(dropRight).drop(dropLeft).map({
-      case (estimatedState, state) =>
-        val errorVector: DenseVector[Double] = estimatedState.toGaussianDistribution.m - state
-        errorVector.t * errorVector
-    }).sum / (states.length - dropRight - dropLeft)
-  }
-
   /**
     * Generate states and observation for a given model.
     *
