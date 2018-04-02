@@ -321,15 +321,18 @@ When applying the classical IMM filtering, attentions are needed for the followi
 \begin{prop}
 	Let $a$, $b$ and $c$ be multivariate Gaussian distribution with square root form $(R_a, z_a)$, $(R_b, z_b)$ and $(R_c, z_c)$ respectively.
 	Suppose that $c = a + Ab$ for some matrix $A$. Then
-	\begin{align*}
+	\begin{align}
 		\begin{pmatrix}
 			R_b &0 &z_b \\
 			-R_aA &R_a &z_a
-		\end{pmatrix} = Q\begin{pmatrix}
-			- &- &-\\
+		\end{pmatrix} = \begin{pmatrix}
+		-, Q
+		\end{pmatrix}\begin{pmatrix}
+			H &L &-\\
 			0 &R_c &z_c
 		\end{pmatrix}
-	\end{align*}
+		\label{prop:eq1}
+	\end{align}
 	the right hand side is the QR decomposition of the left hand side.
 	Moreover,
 	\begin{align*}
@@ -338,9 +341,23 @@ When applying the classical IMM filtering, attentions are needed for the followi
 		\end{pmatrix} = R_c m_a,
 		&&Q^T\begin{pmatrix}
 		z_b \\ 0
-		\end{pmatrix} = R_c m_b.
+		\end{pmatrix} = R_c A m_b,
 	\end{align*}
+	where $m_a, m_b$ and $m_c$ are mean of $a, b$ and $c$ respectively
 \end{prop}
+
+\begin{proof}
+	From \autoref{prop:eq1}, we have
+	\begin{align*}
+		H^TH &= R^T_b R_b + A^T R^T_a R_a A, \\
+		H^TL &= -A^T R^T_a R_a, \\
+		R^T_a R_a &= L^T L + R^T_c R_c.
+	\end{align*}
+	From above, we obtain
+	\begin{align*}
+	content...
+	\end{align*}
+\end{proof}
 
 \subsubsection{Model Likelihood Computation}
 
