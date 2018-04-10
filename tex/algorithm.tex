@@ -36,7 +36,7 @@
 \usepackage{graphicx}  %%% the recommended graphics package
 \usepackage[all]{xy}
 \usepackage{amscd}
-\usepackage{hyperref}
+\usepackage{cleveref}
 
 
 %%% Start of metadata
@@ -114,6 +114,7 @@
 %   Type your macros (\newcommand's etc) below.
 %
 \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
 
 
 %%% End of user-defined macros %%%
@@ -177,7 +178,7 @@ where $v_k \in N(0, I)$.
 A filtering problem is to solve
 \begin{align*}
 & \underset{x_T}{\text{minimize}} & & \norm{\tilde{R}_x(1)x_1 - \tilde{z}_x(1)} + \sum_{k=1}^{T}\norm{Ax_k - z_k}^2 \\
-& \text{subject to} & & \autoref{eq:predict}.
+& \text{subject to} & & \cref{eq:predict}.
 \end{align*}
 
 \subsubsection{Prediction Step}
@@ -186,7 +187,7 @@ Let $(\hat{R}_x(k-1), \hat{z}_x(k-1))$ be the square root form of the updated es
 The prediction step is to solve
 \begin{align*}
 	& \underset{x_k}{\text{minimize}} & &\norm{\hat{R}_x(k-1)x_{k-1} - \hat{z}_x(k-1)}^2 + \norm{R_w(k)w_j - z_w(k)}^2 \\
-	& \text{subject to} & & \autoref{eq:predict}.
+	& \text{subject to} & & \cref{eq:predict}.
 \end{align*}
 
 Noted that $x_{k-1} = \Phi^{-1}_k(x_k - Gw_k)$, the above minimization problem is equivalent to
@@ -259,7 +260,7 @@ where
 A smoothing problem is to solve
 \begin{align*}
 & \underset{x_k}{\text{minimize}} & & \norm{\tilde{R}_x(1)x_1 - \tilde{z}_x(1)} + \sum_{l=1}^{K}\norm{Ax_l - z_l}^2 \\
-& \text{subject to} & & \autoref{eq:predict}.
+& \text{subject to} & & \cref{eq:predict}.
 \end{align*}
 for $1\leq k \leq T$.
 
@@ -270,7 +271,7 @@ The smooth step is to solve
 \begin{align*}
 	& \underset{x_{k-1}}{\text{minimize}} & &\norm{\tilde{R}_w(k)w_k + \tilde{R}_{wx}(k)x_k - \tilde{z}_w(k)}^2 +
 	\norm{\tilde{R}_x(k)x_k - \tilde{z}_x(k)}^2 \\
-	& \text{subject to} & & \autoref{eq:predict}.
+	& \text{subject to} & & \cref{eq:predict}.
 \end{align*}
 Replacing $x_k$ by $\Phi_k x_{k-1} + Gw_k$, the above minimization problem is equivalent to
 \begin{align*}
@@ -331,33 +332,58 @@ When applying the classical IMM filtering, attentions are needed for the followi
 			H &L &-\\
 			0 &R_c &z_c
 		\end{pmatrix}
-		\label{prop:eq1}
+		\label{prop_1:eq_1}
 	\end{align}
 	the right hand side is the QR decomposition of the left hand side.
 	Moreover,
-	\begin{align*}
+	\begin{align}
 		&Q^T\begin{pmatrix}
 			0 \\ z_a
 		\end{pmatrix} = R_c m_a,
 		&&Q^T\begin{pmatrix}
 		z_b \\ 0
 		\end{pmatrix} = R_c A m_b,
-	\end{align*}
+		\label{prop_1:eq_7}
+	\end{align}
 	where $m_a, m_b$ and $m_c$ are mean of $a, b$ and $c$ respectively
+	\label{prop_1}
 \end{prop}
 
 \begin{proof}
-	From \autoref{prop:eq1}, we have
+	Let $V_a, V_b$ and $V_c$ be the covariance matrix of $a, b$ and $c$ respectively.
+	We first show that $V_c = V_a + A V_b A^T$.
+	Comparing the left and right side of \cref{prop_1:eq_1}, we have
+	\begin{align}
+		H^TH &= R^T_b R_b + A^T R^T_a R_a A, \label{prop_1:eq_2}\\
+		H^TL &= -A^T R^T_a R_a, \label{prop_1:eq_3}\\
+		R^T_a R_a &= L^T L + R^T_c R_c. \label{prop_1:eq_4}
+	\end{align}
+	\cref{prop_1:eq_3} implies that
+	\begin{align}
+		L = - H^{-T} A^T R^T_a R_a. \label{prop_1:eq_5}
+	\end{align}
+	
+	From \cref{prop_1:eq_2,prop_1:eq_4,prop_1:eq_5}, we have
 	\begin{align*}
-		H^TH &= R^T_b R_b + A^T R^T_a R_a A, \\
-		H^TL &= -A^T R^T_a R_a, \\
-		R^T_a R_a &= L^T L + R^T_c R_c.
+		R^T_c R_c 	&= R^T_a R_a - L^T L \\
+					&= R^T_a R_a - R^T_a R_a A (H^TH)^{-1} A^T R^T_a R_a \\
+					&= R^T_a R_a - R^T_a R_a A \left( R^T_b R_b + A^T R^T_a R_a A \right)^{-1} A^T R^T_a R_a \\
+					&= V_a^{-1} - V_a^{-1} A \left( V_b^{-1} + A^T V_a^{-1} A \right)^{-1} A^T V_a^{-1} \\
+					&= \left( V_a + A V_b A^T \right)^{-1}, \numberthis\label{prop_1:eq_6}
 	\end{align*}
-	From above, we obtain
+	where \cref{prop_1:eq_6} is due to \textit{Woodbury matrix identity}.
+	Hence we have $V_c = V_a + A V_b A^T$.
+	
+	Next, we show that $m_c = m_a + A m_b$. TODO
+	
+	To show \cref{prop_1:eq_7}, by pre--multiplying $Q^T$ to the left and right side of \cref{prop_1:eq_1}, we obtain that
 	\begin{align*}
 	content...
 	\end{align*}
+	
 \end{proof}
+
+
 
 \subsubsection{Model Likelihood Computation}
 
