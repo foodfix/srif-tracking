@@ -351,14 +351,21 @@ When applying the classical IMM filtering, attentions are needed for the followi
 
 \begin{proof}
 	Let $V_a, V_b$ and $V_c$ be the covariance matrix of $a, b$ and $c$ respectively.
-	We first show that $V_c = V_a + A V_b A^T$.
+	
+	To prove \cref{prop_1:eq_1}, we need to show
+	\begin{align}
+		m_c &= m_a + A m_b, \label{prop_1:eq_9}\\
+		V_c &= V_a + A V_b A^T. \label{prop_1:eq_10}
+	\end{align}
+	
+	We first show that \cref{prop_1:eq_10} holds.
 	Comparing the left and right side of \cref{prop_1:eq_1}, we have
 	\begin{align}
 		H^TH &= R^T_b R_b + A^T R^T_a R_a A, \label{prop_1:eq_2}\\
 		H^TL &= -A^T R^T_a R_a, \label{prop_1:eq_3}\\
 		R^T_a R_a &= L^T L + R^T_c R_c. \label{prop_1:eq_4}
 	\end{align}
-	\cref{prop_1:eq_3} implies that
+	\Cref{prop_1:eq_3} implies that
 	\begin{align}
 		L = - H^{-T} A^T R^T_a R_a. \label{prop_1:eq_5}
 	\end{align}
@@ -372,14 +379,44 @@ When applying the classical IMM filtering, attentions are needed for the followi
 					&= \left( V_a + A V_b A^T \right)^{-1}, \numberthis\label{prop_1:eq_6}
 	\end{align*}
 	where \cref{prop_1:eq_6} is due to \textit{Woodbury matrix identity}.
-	Hence we have $V_c = V_a + A V_b A^T$.
+	Hence \cref{prop_1:eq_9} holds.
 	
-	Next, we show that $m_c = m_a + A m_b$. TODO
-	
-	To show \cref{prop_1:eq_7}, by pre--multiplying $Q^T$ to the left and right side of \cref{prop_1:eq_1}, we obtain that
+	Before we show that $m_c = m_a + A m_b$, we show \cref{prop_1:eq_7} first.
+	By pre--multiplying $Q^T$ to the left and right side of \cref{prop_1:eq_1}, we obtain that
+	\begin{align}
+		Q^T \begin{pmatrix}
+		R_b &0 &z_b \\
+		-R_aA &R_a &z_a
+		\end{pmatrix} = \begin{pmatrix}
+		0, I
+		\end{pmatrix}\begin{pmatrix}
+		H &L &-\\
+		0 &R_c &z_c
+		\end{pmatrix} = \begin{pmatrix} 0 &R_c &z_c \end{pmatrix}.
+		\label{prop_1:eq_8}
+	\end{align}
+	Hence by \cref{prop_1:eq_8}, we have
 	\begin{align*}
-	content...
+		Q^T\begin{pmatrix} R_b \\ -R_aA \end{pmatrix} &= 
+		Q^T\begin{pmatrix} R_b \\ 0 \end{pmatrix} - Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} A = 0, \\
+		Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} &= R_c,
 	\end{align*}
+	which implies \cref{prop_1:eq_7} using
+	\begin{align*}
+		Q^T\begin{pmatrix} 0 \\ z_a \end{pmatrix} &= Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} m_a = R_c m_a, \\
+		Q^T\begin{pmatrix} z_b \\ 0 \end{pmatrix} &= 
+		Q^T\begin{pmatrix} R_b \\ 0 \end{pmatrix} m_b = Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} A m_b =
+		 R_c A m_b.
+	\end{align*}
+	
+	From \cref{prop_1:eq_7,prop_1:eq_8} we have
+	\begin{align*}
+	Q^T\begin{pmatrix} z_b \\ z_a \end{pmatrix} = 
+	Q^T\begin{pmatrix} z_b \\ 0 \end{pmatrix} + Q^T\begin{pmatrix} 0 \\ z_a \end{pmatrix} =
+	R_c m_a + R_c A m_b =
+	z_c = R_c m_c.
+	\end{align*}
+	Since $R_c$ is invertible, \cref{prop_1:eq_9} follows.
 	
 \end{proof}
 
