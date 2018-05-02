@@ -36,7 +36,7 @@
 \usepackage{graphicx}  %%% the recommended graphics package
 \usepackage[all]{xy}
 \usepackage{amscd}
-\usepackage{hyperref}
+\usepackage{cleveref}
 
 
 %%% Start of metadata
@@ -102,6 +102,7 @@
 %
 \newtheorem{thm}{Theorem}[section]    % Standard theorem environment
 \newtheorem{lem}[thm]{Lemma}          % Lemma environment with numbering 
+\newtheorem{prop}[thm]{Proposition}   % Proposition environment with numbering
 %                                     % consecutive to theorems
 \newtheorem*{zlem}{Zorn's Lemma}      % A special unnumbered lemma.
 %
@@ -113,6 +114,7 @@
 %   Type your macros (\newcommand's etc) below.
 %
 \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
 
 
 %%% End of user-defined macros %%%
@@ -132,7 +134,11 @@ In this article, we describe the algorithm in this project.
 \section{Introduction}
 
 Naive implementations of Kalman filters and smoothers have numerical instability issues.
-In this project, we implemented the square root formulation of the Kalman algorithm, which is more accurate and stable. 
+In this project, the square root formulation of the Kalman algorithm is implemented, which is more accurate and stable. 
+
+In case the dynamics are presented by multiple models,
+an approach to the multiple model fixed interval smoothing problem for the square root Kalman algorithms is examined.
+The approach is based on the interacting multiple models (IMM), except that we consider the square root Kalman algorithms.
 
 \section{Square Root Kalman Algorithm}
 
@@ -151,138 +157,272 @@ The square root formulation of the Kalman algorithms:
 \end{itemize}
 will be parametrized by Gaussian random variables in square root form.
 
-\subsection{Square Root Information Filter}
-
-Recall that in $j$th iteration, the true state $x_j$ is evolved from the state $x_{j-1}$ according to
+Recall that in $k$th iteration, the true state $x_k$ is evolved from the state $x_{k-1}$ according to
 \begin{align}
-	x_j = \Phi_j x_{j-1} + Gw_j \label{eq:predict}
+x_k = \Phi_k x_{k-1} + Gw_k \label{eq:predict}
 \end{align}
 where
 \begin{itemize}
-	\item $\Phi_j$ is the nonsingular transition matrix and
-	\item $w_j$ is the process noise that are assumed to have zero mean and nonsingular covariance matrix 
-	$Q_w(j)=(R^T_w(j)R_w(j))^{-1}$.
+	\item $\Phi_k$ is the nonsingular transition matrix and
+	\item $w_k$ is the process noise that are assumed to have zero mean and nonsingular covariance matrix 
+	$Q_w(k)=(R^T_w(k)R_w(k))^{-1}$.
 \end{itemize}
-An observation $z_j$ of the true state $x_j$ is made according to
+An observation $z_k$ of the true state $x_k$ is made according to
 \begin{align*}
-	z_j = A x_j + v_j
+	&z_k = A x_k + v_k & &\text{for } 1\leq k \leq T
 \end{align*}
-where $v_j \in N(0, I)$.
+where $v_k \in N(0, I)$.
+
+\subsection{Square Root Information Filter}
+
+A filtering problem is to solve
+\begin{align*}
+& \underset{x_T}{\text{minimize}} & & \norm{\tilde{R}_x(1)x_1 - \tilde{z}_x(1)} + \sum_{k=1}^{T}\norm{Ax_k - z_k}^2 \\
+& \text{subject to} & & \cref{eq:predict}.
+\end{align*}
 
 \subsubsection{Prediction Step}
 
-Let $(\hat{R}_x(j-1), \hat{z}_x(j-1))$ be the square root form of the updated estimate in iteration $j-1$.
+Let $(\hat{R}_x(k-1), \hat{z}_x(k-1))$ be the square root form of the updated estimate in iteration $k-1$.
 The prediction step is to solve
 \begin{align*}
-	& \underset{x_j, w_j}{\text{minimize}} & &\norm{\hat{R}_x(j-1)x_{j-1} - \hat{z}_x(j-1)}^2 + \norm{R_w(j)w_j - z_w(j)}^2 \\
-	& \text{subject to} & & \autoref{eq:predict}.
+	& \underset{x_k}{\text{minimize}} & &\norm{\hat{R}_x(k-1)x_{k-1} - \hat{z}_x(k-1)}^2 + \norm{R_w(k)w_j - z_w(k)}^2 \\
+	& \text{subject to} & & \cref{eq:predict}.
 \end{align*}
 
-Noted that $x_{j-1} = \Phi^{-1}_j(x_j - Gw_j)$, the above minimization problem is equivalent to
+Noted that $x_{k-1} = \Phi^{-1}_k(x_k - Gw_k)$, the above minimization problem is equivalent to
 \begin{align*}
-	& \underset{x_j, w_j}{\text{minimize}} & &\norm{
+	& \underset{x_k, w_k}{\text{minimize}} & &\norm{
 		\begin{pmatrix}
-		R_w(j) &0 \\
-		-R^d_x(j)G &R^d_x(j)
+		R_w(k) &0 \\
+		-R^d_x(k)G &R^d_x(k)
 		\end{pmatrix}
 		\begin{pmatrix}
-		w_j \\ x_j
+		w_k \\ x_k
 		\end{pmatrix} - \begin{pmatrix}
-		z_w(j) \\ \hat{z}_x(j-1)
+		z_w(k) \\ \hat{z}_x(k-1)
 		\end{pmatrix}}^2
 \end{align*}
 which can be solved by using the QR decomposition
 \begin{align*}
 	\begin{pmatrix}
-		R_w(j) &0 &z_w(j) \\ 
-		-R^d_x(j)G &R^d_x(j) &\hat{z}_x(j-1)
+		R_w(k) &0 &z_w(k) \\ 
+		-R^d_x(k)G &R^d_x(k) &\hat{z}_x(k-1)
 	\end{pmatrix} = Q
 	\begin{pmatrix}
-		\tilde{R}_w(j) &\tilde{R}_{wx}(j) &\tilde{z}_w(j) \\ 0 &\tilde{R}_x(j) &\tilde{z}_x(j)
+		\tilde{R}_w(k) &\tilde{R}_{wx}(k) &\tilde{z}_w(k) \\ 0 &\tilde{R}_x(k) &\tilde{z}_x(k)
 	\end{pmatrix}
 \end{align*}
 where
 \begin{itemize}
 	\item the right hand side is the QR decomposition of the left hand side,
-	\item $(R_w(j), z_w(j))$ is the prior estimate of $w_j$ in square root form,
-	\item $R^d_x(j)=\hat{R}_x(j-1)\Phi^{-1}_j$ and
-	\item $(\tilde{R}_x(j), \tilde{z}_x(j))$ is the predict estimate in square root form.
+	\item $(R_w(k), z_w(k))$ is the prior estimate of $w_k$ in square root form,
+	\item $R^d_x(k)=\hat{R}_x(k-1)\Phi^{-1}_k$ and
+	\item $(\tilde{R}_x(k), \tilde{z}_x(k))$ is the predict estimate in square root form.
 \end{itemize}
 
 \subsubsection{Update Step}
 
-Let $(\tilde{R}_x(j), \tilde{z}_x(j))$ be the prior information obtained from prediction step, 
+Let $(\tilde{R}_x(k), \tilde{z}_x(k))$ be the prior information obtained from prediction step, 
 the update step is to solve
 \begin{align*}
-	& \underset{x_j}{\text{minimize}} & &\norm{\tilde{R}_x(j)x_j - \tilde{z}_x(j)}^2 + \norm{Ax_j - z_j}^2.
+	& \underset{x_k}{\text{minimize}} & &\norm{\tilde{R}_x(k)x_k - \tilde{z}_x(k)}^2 + \norm{Ax_k - z_k}^2.
 \end{align*}
 The above minimization problem can be rewritten as
 \begin{align*}
-	& \underset{x_j}{\text{minimize}} & &\norm{
+	& \underset{x_k}{\text{minimize}} & &\norm{
 	\begin{pmatrix}
-	\tilde{R}_x(j) \\ \hat{R}_x(j)
-	\end{pmatrix}x_j - 
+	\tilde{R}_x(k) \\ \hat{R}_x(k)
+	\end{pmatrix}x_k - 
 	\begin{pmatrix}
-	\tilde{z}_x(j) \\  z_j
+	\tilde{z}_x(k) \\  z_k
 	\end{pmatrix}}^2
 \end{align*}
 which can be solved by using the QR decomposition
 \begin{align*}
 	\begin{pmatrix}
-		\tilde{R}_x(j) &\tilde{z}_x(j) \\ 
-		A &z_j
+		\tilde{R}_x(k) &\tilde{z}_x(k) \\ 
+		A &z_k
 	\end{pmatrix} = Q
 	\begin{pmatrix}
-		\hat{R}_x(j) &\hat{z}_x(j) \\
-		0 &e_j
+		\hat{R}_x(k) &\hat{z}_x(k) \\
+		0 &e_k
 	\end{pmatrix}
 \end{align*}
 where
 \begin{itemize}
 	\item the right hand side is the QR decomposition of the left hand side and
-	\item $(\hat{R}_x(j), \hat{z}_x(j))$ is the updated estimate in square root form.
+	\item $(\hat{R}_x(k), \hat{z}_x(k))$ is the updated estimate in square root form.
 \end{itemize}
 
 \subsection{Square Root Information Smoother}
 
-Let $(R^*_x(j), z^*_x(j)$ be the smoothed estimate in iteration $j$.
+A smoothing problem is to solve
+\begin{align*}
+& \underset{x_k}{\text{minimize}} & & \norm{\tilde{R}_x(1)x_1 - \tilde{z}_x(1)} + \sum_{l=1}^{K}\norm{Ax_l - z_l}^2 \\
+& \text{subject to} & & \cref{eq:predict}.
+\end{align*}
+for $1\leq k \leq T$.
+
+\subsubsection{Smooth Step}
+
+Let $(R^*_x(k), z^*_x(k)$ be the smoothed estimate in iteration $k$.
 The smooth step is to solve
 \begin{align*}
-	& \underset{x_{j-1}, w_j}{\text{minimize}} & &\norm{\tilde{R}_w(j)w_j + \tilde{R}_{wx}(j)x_j - \tilde{z}_w(j)}^2 +
-	\norm{\tilde{R}_x(j)x_j - \tilde{z}_x(j)}^2 \\
-	& \text{subject to} & & \autoref{eq:predict}.
+	& \underset{x_{k-1}}{\text{minimize}} & &\norm{\tilde{R}_w(k)w_k + \tilde{R}_{wx}(k)x_k - \tilde{z}_w(k)}^2 +
+	\norm{\tilde{R}_x(k)x_k - \tilde{z}_x(k)}^2 \\
+	& \text{subject to} & & \cref{eq:predict}.
 \end{align*}
-Replacing $x_j$ by $\Phi_j x_{j-1} + Gw_j$, the above minimization problem is equivalent to
+Replacing $x_k$ by $\Phi_k x_{k-1} + Gw_k$, the above minimization problem is equivalent to
 \begin{align*}
-	& \underset{x_{j-1}, w_j}{\text{minimize}} & &\norm{
+	& \underset{x_{k-1}, w_k}{\text{minimize}} & &\norm{
 		\begin{pmatrix}
-			\tilde{R}_w(j) + \tilde{R}_{wx}(j)G &\tilde{R}_{wx}(j)\Phi_j \\
-			R^*_x(j)G &R^*_x(j)\Phi_j
+			\tilde{R}_w(k) + \tilde{R}_{wx}(k)G &\tilde{R}_{wx}(k)\Phi_k \\
+			R^*_x(k)G &R^*_x(k)\Phi_k
 		\end{pmatrix}
 		\begin{pmatrix}
-		w_j \\ x_{j-1}
+		w_k \\ x_{k-1}
 		\end{pmatrix} - 
 		\begin{pmatrix}
-			\tilde{z}_w(j) \\ z^*_x(j)
+			\tilde{z}_w(k) \\ z^*_x(k)
 		\end{pmatrix}}^2
 \end{align*}
 which can be solved by using the QR decomposition
 \begin{align*}
 	\begin{pmatrix}
-		\tilde{R}_w(j) + \tilde{R}_{wx}(j)G &\tilde{R}_{wx}(j)\Phi_j &\tilde{z}_w(j) \\
-		R^*_x(j)G &R^*_x(j)\Phi_j &z^*_x(j)
+		\tilde{R}_w(k) + \tilde{R}_{wx}(k)G &\tilde{R}_{wx}(k)\Phi_j &\tilde{z}_w(k) \\
+		R^*_x(k)G &R^*_x(k)\Phi_j &z^*_x(k)
 	\end{pmatrix} = Q
 	\begin{pmatrix}
-		R^*_w(j) &R^*_{wx}(j) &z^*_w(j) \\
-		0 &R^*_x(j-1) &z^*_x(j-1)
+		R^*_w(k) &R^*_{wx}(k) &z^*_w(k) \\
+		0 &R^*_x(k-1) &z^*_x(k-1)
 	\end{pmatrix}
 \end{align*}
 where
 \begin{itemize}
 	\item the right hand side is the QR decomposition of the left hand side and
-	\item $(R^*_x(j-1), z^*_x(j-1))$ is the smoothed estimate in square root form.
+	\item $(R^*_x(k-1), z^*_x(k-1))$ is the smoothed estimate in square root form.
 \end{itemize}
 
+\section{Square Root IMM Algorithm}
+
+Let $M_k$ be the model in effect during the sampling period ending at time $k$.
+The event that model $j$ $(j=1,\ldots,n)$ is in effect during the sampling period ending at time $k$ will be denoted by $M^j_k$.
+
+\subsection{Square Root IMM Filter}
+
+When applying the classical IMM filtering, attentions are needed for the followings:
+\begin{itemize}
+	\item mixing the state estimates and
+	\item model likelihood computation.
+\end{itemize}
+
+\subsubsection{Mixing The State Estimates}
+
+\begin{prop}
+	Let $a$, $b$ and $c$ be multivariate Gaussian distribution with square root form $(R_a, z_a)$, $(R_b, z_b)$ and $(R_c, z_c)$ respectively.
+	Suppose that $c = a + Ab$ for some matrix $A$. Then
+	\begin{align}
+		\begin{pmatrix}
+			R_b &0 &z_b \\
+			-R_aA &R_a &z_a
+		\end{pmatrix} = \begin{pmatrix}
+		-, Q
+		\end{pmatrix}\begin{pmatrix}
+			H &L &-\\
+			0 &R_c &z_c
+		\end{pmatrix}
+		\label{prop_1:eq_1}
+	\end{align}
+	the right hand side is the QR decomposition of the left hand side.
+	Moreover,
+	\begin{align}
+		&Q^T\begin{pmatrix}
+			0 \\ z_a
+		\end{pmatrix} = R_c m_a,
+		&&Q^T\begin{pmatrix}
+		z_b \\ 0
+		\end{pmatrix} = R_c A m_b,
+		\label{prop_1:eq_7}
+	\end{align}
+	where $m_a, m_b$ and $m_c$ are mean of $a, b$ and $c$ respectively
+	\label{prop_1}
+\end{prop}
+
+\begin{proof}
+	Let $V_a, V_b$ and $V_c$ be the covariance matrix of $a, b$ and $c$ respectively.
+	
+	To prove \cref{prop_1:eq_1}, we need to show
+	\begin{align}
+		m_c &= m_a + A m_b, \label{prop_1:eq_9}\\
+		V_c &= V_a + A V_b A^T. \label{prop_1:eq_10}
+	\end{align}
+	
+	We first show that \cref{prop_1:eq_10} holds.
+	Comparing the left and right side of \cref{prop_1:eq_1}, we have
+	\begin{align}
+		H^TH &= R^T_b R_b + A^T R^T_a R_a A, \label{prop_1:eq_2}\\
+		H^TL &= -A^T R^T_a R_a, \label{prop_1:eq_3}\\
+		R^T_a R_a &= L^T L + R^T_c R_c. \label{prop_1:eq_4}
+	\end{align}
+	\Cref{prop_1:eq_3} implies that
+	\begin{align}
+		L = - H^{-T} A^T R^T_a R_a. \label{prop_1:eq_5}
+	\end{align}
+	
+	From \cref{prop_1:eq_2,prop_1:eq_4,prop_1:eq_5}, we have
+	\begin{align*}
+		R^T_c R_c 	&= R^T_a R_a - L^T L \\
+					&= R^T_a R_a - R^T_a R_a A (H^TH)^{-1} A^T R^T_a R_a \\
+					&= R^T_a R_a - R^T_a R_a A \left( R^T_b R_b + A^T R^T_a R_a A \right)^{-1} A^T R^T_a R_a \\
+					&= V_a^{-1} - V_a^{-1} A \left( V_b^{-1} + A^T V_a^{-1} A \right)^{-1} A^T V_a^{-1} \\
+					&= \left( V_a + A V_b A^T \right)^{-1}, \numberthis\label{prop_1:eq_6}
+	\end{align*}
+	where \cref{prop_1:eq_6} is due to \textit{Woodbury matrix identity}.
+	Hence \cref{prop_1:eq_9} holds.
+	
+	Before we show that $m_c = m_a + A m_b$, we show \cref{prop_1:eq_7} first.
+	By pre--multiplying $Q^T$ to the left and right side of \cref{prop_1:eq_1}, we obtain that
+	\begin{align}
+		Q^T \begin{pmatrix}
+		R_b &0 &z_b \\
+		-R_aA &R_a &z_a
+		\end{pmatrix} = \begin{pmatrix}
+		0, I
+		\end{pmatrix}\begin{pmatrix}
+		H &L &-\\
+		0 &R_c &z_c
+		\end{pmatrix} = \begin{pmatrix} 0 &R_c &z_c \end{pmatrix}.
+		\label{prop_1:eq_8}
+	\end{align}
+	Hence by \cref{prop_1:eq_8}, we have
+	\begin{align*}
+		Q^T\begin{pmatrix} R_b \\ -R_aA \end{pmatrix} &= 
+		Q^T\begin{pmatrix} R_b \\ 0 \end{pmatrix} - Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} A = 0, \\
+		Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} &= R_c,
+	\end{align*}
+	which implies \cref{prop_1:eq_7} using
+	\begin{align*}
+		Q^T\begin{pmatrix} 0 \\ z_a \end{pmatrix} &= Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} m_a = R_c m_a, \\
+		Q^T\begin{pmatrix} z_b \\ 0 \end{pmatrix} &= 
+		Q^T\begin{pmatrix} R_b \\ 0 \end{pmatrix} m_b = Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} A m_b =
+		 R_c A m_b.
+	\end{align*}
+	
+	From \cref{prop_1:eq_7,prop_1:eq_8} we have
+	\begin{align*}
+	Q^T\begin{pmatrix} z_b \\ z_a \end{pmatrix} = 
+	Q^T\begin{pmatrix} z_b \\ 0 \end{pmatrix} + Q^T\begin{pmatrix} 0 \\ z_a \end{pmatrix} =
+	R_c m_a + R_c A m_b =
+	z_c = R_c m_c.
+	\end{align*}
+	Since $R_c$ is invertible, \cref{prop_1:eq_9} follows.
+	
+\end{proof}
+
+
+
+\subsubsection{Model Likelihood Computation}
 
 %%%%%%%%%%%%%%%%%%%%   End of main body of article
 %
