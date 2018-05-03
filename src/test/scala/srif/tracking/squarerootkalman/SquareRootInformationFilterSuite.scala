@@ -22,7 +22,9 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
 import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator
-import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.{calculateEstimationError, getRandomGaussianDistribution}
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.getRandomGaussianDistribution
+import srif.tracking.example.miscTools.UniModel.calculateEstimationError
+
 import srif.tracking.{TargetModel, _}
 
 import scala.util.Random

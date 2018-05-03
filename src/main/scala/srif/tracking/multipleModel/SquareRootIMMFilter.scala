@@ -60,8 +60,8 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
 
     for (i <- List.range(0, numOfFilters);
          j <- List.range(0, numOfFilters)) yield {
-      modelStateProjectionMatrix(i, j).rows == filters(j).getTargetModel.stateDim
-      modelStateProjectionMatrix(i, j).cols == filters(i).getTargetModel.stateDim
+      require(modelStateProjectionMatrix(i, j).rows == filters(i).getTargetModel.stateDim)
+      require(modelStateProjectionMatrix(i, j).cols == filters(j).getTargetModel.stateDim)
     }
 
     val initialLogModeProbability: DenseVector[Double] = DenseVector.fill[Double](numOfFilters, math.log(1.0 / numOfFilters))
