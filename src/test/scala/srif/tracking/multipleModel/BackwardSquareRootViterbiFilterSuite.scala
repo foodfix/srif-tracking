@@ -20,13 +20,13 @@ import breeze.linalg.{DenseMatrix, DenseVector, argmax}
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
 import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
-import srif.tracking.multipleModel.ForwardSquareRootViterbiFilter.ForwardSquareRootViterbiFilterResult
-import srif.tracking.squarerootkalman.SquareRootInformationFilter
+import srif.tracking.multipleModel.BackwardSquareRootViterbiFilter.BackwardSquareRootViterbiFilterResult
+import srif.tracking.squarerootkalman.BackwardSquareRootInformationFilter
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
 import scala.util.Random
 
-class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
+class BackwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
 
   val dim: Int = 3
   val r: Random = new scala.util.Random(0)
@@ -46,21 +46,21 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
     (DenseMatrix.eye[Double](model_0.stateDim), DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)).t),
     (DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)), DenseMatrix.eye[Double](model_1.stateDim)))
 
-  val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
-  val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, false)
+  val filters: List[BackwardSquareRootInformationFilter] = List(new BackwardSquareRootInformationFilter(model_0, false), new BackwardSquareRootInformationFilter(model_1, false))
+  val backwardViterbiFilter = new BackwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, false)
 
-  def validateForwardSquareRootViterbiFilterResult(states: List[DenseVector[Double]], models: List[Int],
-                                                   forwardViterbiFilterResult: List[ForwardSquareRootViterbiFilterResult], modelTol: Double, stateTol: Double): Unit = {
+  def validateBackwardSquareRootViterbiFilterResult(states: List[DenseVector[Double]], models: List[Int],
+                                                    backwardViterbiFilterResult: List[BackwardSquareRootViterbiFilterResult], modelTol: Double, stateTol: Double): Unit = {
 
     val numOfSkippedEvent: Int = 1
 
-    val error: List[List[Double]] = List.range(0, states.length).drop(numOfSkippedEvent).reverse.map(idx => {
+    val error: List[List[Double]] = List.range(0, states.length).dropRight(numOfSkippedEvent).map(idx => {
 
       val state = states(idx)
       val model: Int = models(idx)
 
-      val filterStates: List[FactoredGaussianDistribution] = forwardViterbiFilterResult(idx).updatedEstimatePerFilter
-      val filterStatesLikelihood: DenseVector[Double] = forwardViterbiFilterResult(idx).logLikelihoodPerFilter
+      val filterStates: List[FactoredGaussianDistribution] = backwardViterbiFilterResult(idx).updatedEstimatePerFilter
+      val filterStatesLikelihood: DenseVector[Double] = backwardViterbiFilterResult(idx).logLikelihoodPerFilter
       val selectedFilterModel: Int = argmax(filterStatesLikelihood)
       val selectedFilterState = filterStates(selectedFilterModel)
       val selectFilterErrorVector = modelStateProjectionMatrix(0, selectedFilterModel) * selectedFilterState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
@@ -75,7 +75,7 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
     val filterStateMSE: Double = error.head.sum / (numOfEvents - numOfSkippedEvent)
     val filterModelScore: Double = error(1).sum / (numOfEvents - numOfSkippedEvent)
 
-    forwardViterbiFilterResult.length should be(numOfEvents)
+    backwardViterbiFilterResult.length should be(numOfEvents)
     filterStateMSE should be <= stateTol * stateTol
     filterModelScore should be >= (1 - modelTol)
 
@@ -105,9 +105,9 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val result = backwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateForwardSquareRootViterbiFilterResult(states, models, result, 0.05, 30)
+      validateBackwardSquareRootViterbiFilterResult(states, models, result, 0.05, 30)
 
     })
 
@@ -136,9 +136,9 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val result = backwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateForwardSquareRootViterbiFilterResult(states, models, result, 0.05, 100)
+      validateBackwardSquareRootViterbiFilterResult(states, models, result, 0.05, 100)
 
     })
 
@@ -167,9 +167,9 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val result = backwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateForwardSquareRootViterbiFilterResult(states, models, result, 0.15, 100)
+      validateBackwardSquareRootViterbiFilterResult(states, models, result, 0.15, 150)
 
     })
 
