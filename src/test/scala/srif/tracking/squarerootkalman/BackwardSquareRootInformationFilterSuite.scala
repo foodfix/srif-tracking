@@ -20,8 +20,8 @@ import breeze.linalg.{DenseMatrix, DenseVector}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
-import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator
 import srif.tracking.example.miscTools.UniModel.calculateEstimationError
+import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
 class BackwardSquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyLogging {

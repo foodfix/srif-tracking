@@ -115,7 +115,7 @@ class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
 
           val transitionLogLikelihood: DenseVector[Double] = logModelTransitionMatrix(currentFilterIdx, ::).t
 
-          val predictedLogLikelihoodPerFilter: DenseVector[Double] = previousForwardFilterResult.updatedLogLikelihoodPerFilter +  transitionLogLikelihood
+          val predictedLogLikelihoodPerFilter: DenseVector[Double] = previousForwardFilterResult.updatedLogLikelihoodPerFilter + transitionLogLikelihood
 
           val updatedLogLikelihoodPerFilter: DenseVector[Double] = predictedLogLikelihoodPerFilter + DenseVector(filterResultPerPreviousModel.map(_.observationLogLikelihood): _*)
 

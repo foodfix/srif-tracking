@@ -102,7 +102,7 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
 
     immFilterResult.length should be(numOfEvents)
     immSmootherResult.length should be(numOfEvents)
-    
+
     immFilterStateMSE should be <= stateTol * stateTol
     immSmootherStateMSE should be <= stateTol * stateTol
 
