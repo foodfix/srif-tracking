@@ -60,7 +60,7 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
       val model: Int = models(idx)
 
       val filterStates: List[FactoredGaussianDistribution] = forwardViterbiFilterResult(idx).updatedEstimatePerFilter
-      val filterStatesLikelihood: DenseVector[Double] = forwardViterbiFilterResult(idx).logLikelihoodPerFilter
+      val filterStatesLikelihood: DenseVector[Double] = forwardViterbiFilterResult(idx).updatedLogLikelihoodPerFilter
       val selectedFilterModel: Int = argmax(filterStatesLikelihood)
       val selectedFilterState = filterStates(selectedFilterModel)
       val selectFilterErrorVector = modelStateProjectionMatrix(0, selectedFilterModel) * selectedFilterState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state

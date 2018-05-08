@@ -24,10 +24,10 @@ import srif.tracking.squarerootkalman.BackwardSquareRootInformationFilter
 import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
 import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 
-class BackwardSquareRootViterbiFilter(filters: List[BackwardSquareRootInformationFilter],
+class BackwardSquareRootViterbiFilter(backwardFilters: List[BackwardSquareRootInformationFilter],
                                       modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
                                       isDebugEnabled: Boolean = false) extends LazyLogging {
-  val numOfFilters: Int = filters.length
+  val numOfFilters: Int = backwardFilters.length
 
   /**
     * Return the forward Viterbi filter result.
@@ -53,19 +53,19 @@ class BackwardSquareRootViterbiFilter(filters: List[BackwardSquareRootInformatio
     require(squareRootProcessNoiseCovariancePerFilterLst.forall(_.lengthCompare(numOfFilters) == 0))
     require(stateTransitionMatrixPerFilterLst.forall(_.lengthCompare(numOfFilters) == 0))
 
-    require(stateTransitionMatrixPerFilterLst.forall(ms => (ms, filters).zipped.forall((m, f) => m.cols == f.dim)))
+    require(stateTransitionMatrixPerFilterLst.forall(ms => (ms, backwardFilters).zipped.forall((m, f) => m.cols == f.dim)))
 
     require(modelStateProjectionMatrix.rows == numOfFilters)
     require(modelStateProjectionMatrix.cols == numOfFilters)
 
     for (i <- List.range(0, numOfFilters);
          j <- List.range(0, numOfFilters)) yield {
-      require(modelStateProjectionMatrix(i, j).rows == filters(i).getTargetModel.stateDim)
-      require(modelStateProjectionMatrix(i, j).cols == filters(j).getTargetModel.stateDim)
+      require(modelStateProjectionMatrix(i, j).rows == backwardFilters(i).getTargetModel.stateDim)
+      require(modelStateProjectionMatrix(i, j).cols == backwardFilters(j).getTargetModel.stateDim)
     }
 
     val initialLogLikelihoodPerFilter: DenseVector[Double] = DenseVector.fill[Double](numOfFilters, 0)
-    val initialFilterResultLst: List[FactoredGaussianDistribution] = filters.map(f => FactoredGaussianDistribution(DenseVector.zeros(f.dim), DenseMatrix.zeros(f.dim, f.dim)))
+    val initialFilterResultLst: List[FactoredGaussianDistribution] = backwardFilters.map(f => FactoredGaussianDistribution(DenseVector.zeros(f.dim), DenseMatrix.zeros(f.dim, f.dim)))
     val initialViterbiFilterResult = BackwardSquareRootViterbiFilterResult(initialLogLikelihoodPerFilter, initialFilterResultLst, initialFilterResultLst, None)
 
     sequence(List.range(0, numOfTimeSteps).reverse.map(idx =>
@@ -107,7 +107,7 @@ class BackwardSquareRootViterbiFilter(filters: List[BackwardSquareRootInformatio
             val projectedNextFilterPredictedEstimate: FactoredGaussianDistribution =
               nextFilterPredictedEstimate.multiply(modelStateProjectionMatrix(currentFilterIdx, nextFilterIdx))
 
-            filters(currentFilterIdx).
+            backwardFilters(currentFilterIdx).
               backwardFilterStep(observation,
                 squareRootProcessNoiseCovariancePerFilter(currentFilterIdx),
                 stateTransitionMatrixPerFilter(currentFilterIdx),
@@ -117,15 +117,15 @@ class BackwardSquareRootViterbiFilter(filters: List[BackwardSquareRootInformatio
 
           val transitionLogLikelihood: DenseVector[Double] = logModelTransitionMatrix(::, currentFilterIdx)
 
-          val logLikelihoodPerPreviousModel: DenseVector[Double] =
+          val logLikelihoodPerFilter: DenseVector[Double] =
             nextBackwardFilterResult.logLikelihoodPerFilter +
               DenseVector(filterResultBeforeSwitchingPerModel.map(_.observationLogLikelihood): _*) +
               transitionLogLikelihood
 
-          val selectedNextFilterIdx: Int = argmax(logLikelihoodPerPreviousModel)
+          val selectedNextFilterIdx: Int = argmax(logLikelihoodPerFilter)
 
           List(filterResultBeforeSwitchingPerModel(selectedNextFilterIdx),
-            logLikelihoodPerPreviousModel(selectedNextFilterIdx),
+            logLikelihoodPerFilter(selectedNextFilterIdx),
             selectedNextFilterIdx)
 
         }).transpose match {
