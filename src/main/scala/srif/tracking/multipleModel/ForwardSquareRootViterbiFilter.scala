@@ -24,7 +24,10 @@ import srif.tracking.squarerootkalman.SquareRootInformationFilter
 import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
 import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 
-class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter], modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]], isDebugEnabled: Boolean = false) extends LazyLogging {
+class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
+                                     modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
+                                     switchAfterPrediction: Boolean = false,
+                                     isDebugEnabled: Boolean = false) extends LazyLogging {
 
   val numOfFilters: Int = filters.length
 
@@ -98,7 +101,7 @@ class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
 
         List.range(0, numOfFilters).map(currentFilterIdx => {
 
-          val filterResultPerPreviousModel: List[FilterResult] = List.range(0, numOfFilters).map(previousFilterIdx => {
+          val filterResultBeforeSwitching: List[FilterResult] = List.range(0, numOfFilters).map(previousFilterIdx => {
 
             val previousFilterUpdatedEstimate: FactoredGaussianDistribution = previousForwardFilterResult.updatedEstimatePerFilter(previousFilterIdx)
 
@@ -117,14 +120,14 @@ class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
 
           val predictedLogLikelihoodPerFilter: DenseVector[Double] = previousForwardFilterResult.updatedLogLikelihoodPerFilter + transitionLogLikelihood
 
-          val updatedLogLikelihoodPerFilter: DenseVector[Double] = predictedLogLikelihoodPerFilter + DenseVector(filterResultPerPreviousModel.map(_.observationLogLikelihood): _*)
+          val updatedLogLikelihoodPerFilter: DenseVector[Double] = predictedLogLikelihoodPerFilter + DenseVector(filterResultBeforeSwitching.map(_.observationLogLikelihood): _*)
 
-          val selectedPreviousFilterIdx: Int = argmax(updatedLogLikelihoodPerFilter)
+          val selectedModelIdx: Int = if (switchAfterPrediction) argmax(predictedLogLikelihoodPerFilter) else argmax(updatedLogLikelihoodPerFilter)
 
-          List(filterResultPerPreviousModel(selectedPreviousFilterIdx),
-            predictedLogLikelihoodPerFilter(selectedPreviousFilterIdx),
-            updatedLogLikelihoodPerFilter(selectedPreviousFilterIdx),
-            selectedPreviousFilterIdx)
+          List(filterResultBeforeSwitching(selectedModelIdx),
+            predictedLogLikelihoodPerFilter(selectedModelIdx),
+            updatedLogLikelihoodPerFilter(selectedModelIdx),
+            selectedModelIdx)
 
         }).transpose match {
           case (filterResultPerFilter: List[FilterResult]) :: (predictedLogLikelihoodPerFilter: List[Double]) :: (updatedLogLikelihoodPerFilter: List[Double]) :: (previousModelPerFilter: List[Int]) :: Nil =>

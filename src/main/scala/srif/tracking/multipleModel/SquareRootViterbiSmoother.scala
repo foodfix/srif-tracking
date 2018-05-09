@@ -30,7 +30,7 @@ class SquareRootViterbiSmoother(filters: List[SquareRootInformationFilter],
                                 isDebugEnabled: Boolean = false) extends LazyLogging {
 
   val numOfFilters: Int = filters.length
-  val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, isDebugEnabled)
+  val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, true, isDebugEnabled)
   val backwardViterbiFilter = new BackwardSquareRootViterbiFilter(backwardFilters, modelStateProjectionMatrix, isDebugEnabled)
 
   /**

@@ -47,7 +47,7 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
     (DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)), DenseMatrix.eye[Double](model_1.stateDim)))
 
   val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
-  val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, false)
+  val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, false, false)
 
   def validateForwardSquareRootViterbiFilterResult(states: List[DenseVector[Double]], models: List[Int],
                                                    forwardViterbiFilterResult: List[ForwardSquareRootViterbiFilterResult], modelTol: Double, stateTol: Double): Unit = {
