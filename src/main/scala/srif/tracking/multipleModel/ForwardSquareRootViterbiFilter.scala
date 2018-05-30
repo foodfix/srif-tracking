@@ -19,7 +19,7 @@ package srif.tracking.multipleModel
 import breeze.linalg.{DenseMatrix, DenseVector, argmax}
 import com.typesafe.scalalogging.LazyLogging
 import scalaz.State
-import srif.tracking.multipleModel.ForwardSquareRootViterbiFilter.ForwardSquareRootViterbiFilterResult
+import srif.tracking.multipleModel.ForwardSquareRootViterbiFilter.{ForwardSquareRootViterbiFilterResult, ForwardSquareRootViterbiSmoothResult}
 import srif.tracking.squarerootkalman.SquareRootInformationFilter
 import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
 import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
@@ -30,6 +30,31 @@ class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
                                      isDebugEnabled: Boolean = false) extends LazyLogging {
 
   val numOfFilters: Int = filters.length
+
+  def onlineSmooth(logModelTransitionMatrixLst: List[DenseMatrix[Double]],
+                   observationLst: List[FactoredGaussianDistribution],
+                   squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]],
+                   stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]],
+                   invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[ForwardSquareRootViterbiSmoothResult] = {
+
+    val filterResultLst = apply(logModelTransitionMatrixLst,
+      observationLst,
+      squareRootProcessNoiseCovariancePerFilterLst,
+      stateTransitionMatrixPerFilterLst,
+      invStateTransitionMatrixPerFilterLst)
+
+    val lastModel: Int = argmax(filterResultLst.last.updatedLogLikelihoodPerFilter)
+
+    sequence(filterResultLst.reverse.
+      map(filterResult => State[Option[Int], ForwardSquareRootViterbiSmoothResult] {
+        selectModel =>
+          val previousModel: Option[Int] = filterResult.previousModelPerFilter.map(_ (selectModel.get))
+          val smoothResult = ForwardSquareRootViterbiSmoothResult(filterResult.updatedEstimatePerFilter(selectModel.get), selectModel.get)
+          (previousModel, smoothResult)
+      })).eval(Some(lastModel)).
+      reverse
+
+  }
 
   /**
     * Return the forward Viterbi filter result.
@@ -154,5 +179,7 @@ object ForwardSquareRootViterbiFilter {
                                                   predictedEstimatePerFilter: List[FactoredGaussianDistribution],
                                                   updatedEstimatePerFilter: List[FactoredGaussianDistribution],
                                                   previousModelPerFilter: Option[List[Int]])
+
+  case class ForwardSquareRootViterbiSmoothResult(smoothedEstimate: FactoredGaussianDistribution, modelIdx: Int)
 
 }
