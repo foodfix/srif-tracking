@@ -109,7 +109,7 @@ class BackwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
 
       val result = backwardViterbiFilter(backwardLogModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateBackwardSquareRootViterbiFilterResult(states, models, result, 0.05, 30)
+      validateBackwardSquareRootViterbiFilterResult(states, models, result, 0.06, 30)
 
     })
 

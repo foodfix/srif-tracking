@@ -106,7 +106,8 @@ class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
             val previousFilterUpdatedEstimate: FactoredGaussianDistribution = previousForwardFilterResult.updatedEstimatePerFilter(previousFilterIdx)
 
             val projectedPreviousFilterUpdatedEstimate: FactoredGaussianDistribution =
-              previousFilterUpdatedEstimate.multiply(modelStateProjectionMatrix(currentFilterIdx, previousFilterIdx))
+              if (previousFilterIdx == currentFilterIdx) previousFilterUpdatedEstimate
+              else previousFilterUpdatedEstimate.multiply(modelStateProjectionMatrix(currentFilterIdx, previousFilterIdx))
 
             filters(currentFilterIdx).
               filterStep(observation,

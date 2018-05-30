@@ -105,7 +105,8 @@ class BackwardSquareRootViterbiFilter(backwardFilters: List[BackwardSquareRootIn
             val nextFilterPredictedEstimate: FactoredGaussianDistribution = nextBackwardFilterResult.predictedEstimatePerFilter(nextFilterIdx)
 
             val projectedNextFilterPredictedEstimate: FactoredGaussianDistribution =
-              nextFilterPredictedEstimate.multiply(modelStateProjectionMatrix(currentFilterIdx, nextFilterIdx))
+              if (currentFilterIdx == nextFilterIdx) nextFilterPredictedEstimate
+              else nextFilterPredictedEstimate.multiply(modelStateProjectionMatrix(currentFilterIdx, nextFilterIdx))
 
             backwardFilters(currentFilterIdx).
               backwardFilterStep(observation,
