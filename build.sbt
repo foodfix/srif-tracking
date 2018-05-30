@@ -1,6 +1,6 @@
 name := "srif-tracking"
 
-organization := "cwd"
+organization := "com.github.foodfix"
 
 version := "0.5-SNAPSHOT"
 
