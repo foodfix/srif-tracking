@@ -16,7 +16,7 @@
 
 package srif
 
-import breeze.linalg.{DenseMatrix, DenseVector, cholesky, diag, inv, max, qr, upperTriangular}
+import breeze.linalg.{DenseMatrix, DenseVector, cholesky, det, diag, inv, max, qr, upperTriangular}
 import breeze.numerics.abs
 import breeze.stats.distributions.MultivariateGaussian
 import scalaz.State
@@ -141,6 +141,10 @@ package object tracking {
     */
   case class FactoredGaussianDistribution(zeta: DenseVector[Double], R: DenseMatrix[Double]) {
     def toGaussianDistribution: GaussianDistribution = GaussianDistribution(R \ zeta, inv(R.t * R))
+    def toGaussianDistributionOption: Option[GaussianDistribution] = {
+      if (det(R)==0) None
+      else Some(GaussianDistribution(R \ zeta, inv(R.t * R)))
+    }
 
     /**
       * Compute the logarithmic likelihood at mean = 0, var = (R^T * R)^{-1}, x = R \ zeta
