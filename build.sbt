@@ -1,5 +1,7 @@
 name := "srif-tracking"
 
+organization := "cwd"
+
 version := "1.2"
 
 scalaVersion := "2.11.12"
