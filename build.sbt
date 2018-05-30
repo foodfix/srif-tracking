@@ -2,7 +2,7 @@ name := "srif-tracking"
 
 organization := "cwd"
 
-version := "1.2"
+version := "0.5-SNAPSHOT"
 
 scalaVersion := "2.11.12"
 
