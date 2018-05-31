@@ -16,7 +16,7 @@
 
 package srif.tracking.multipleModel
 
-import breeze.linalg.{*, DenseMatrix, DenseVector, det, softmax}
+import breeze.linalg.{*, DenseMatrix, DenseVector, argmax, det, softmax}
 import breeze.numerics.exp
 import com.typesafe.scalalogging.LazyLogging
 import scalaz.State
@@ -27,6 +27,13 @@ import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
 import srif.tracking.squarerootkalman.SquareRootInformationSmoother
 import srif.tracking.squarerootkalman.SquareRootInformationSmoother.SmoothResult
 
+/**
+  * Square Root IMM smoother
+  *
+  * @param smoothers list of smoothers.
+  * @param modelStateProjectionMatrix used to project the state of one model to another model
+  * @param isDebugEnabled true if show debug message
+  */
 class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]], isDebugEnabled: Boolean = false) extends LazyLogging {
 
   lazy val immFilter: SquareRootIMMFilter = new SquareRootIMMFilter(smoothers.map(_.filter), modelStateProjectionMatrix, isDebugEnabled)
@@ -235,5 +242,31 @@ object SquareRootIMMSmoother {
 
   case class IMMSmootherResult(smoothedLogModeProbability: DenseVector[Double],
                                smoothResultPerSmoother: List[SmoothResult])
+
+  /**
+    * Fuse the estimation result.
+    *
+    * @param estimationResults return of [[SquareRootIMMSmoother]]
+    * @param modelStateProjectionMatrix refer to [[SquareRootIMMSmoother]]
+    * @return fused estimation states
+    *         estimated model index
+    *         estimtaed model probability
+    */
+  def fuseEstResult(estimationResults: List[IMMSmootherResult],
+                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[(FactoredGaussianDistribution, Int, Double)] = {
+
+    estimationResults.map(estimationResult => {
+
+      val selectedModel: Int = argmax(estimationResult.smoothedLogModeProbability)
+
+      val estStates: List[FactoredGaussianDistribution] = estimationResult.smoothResultPerSmoother.map(_.smoothedStateEstimation)
+      val estStateProbabilities: List[Double] = estimationResult.smoothedLogModeProbability.toArray.toList.map(math.exp)
+      val fusedEstimationState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toList, selectedModel)
+
+      (fusedEstimationState, selectedModel, estStateProbabilities(selectedModel))
+
+    })
+
+  }
 
 }
