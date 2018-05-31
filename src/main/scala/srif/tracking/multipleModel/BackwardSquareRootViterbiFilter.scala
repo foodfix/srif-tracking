@@ -119,7 +119,7 @@ class BackwardSquareRootViterbiFilter(backwardFilters: List[BackwardSquareRootIn
           val transitionLogLikelihood: DenseVector[Double] = logModelTransitionMatrix(::, currentFilterIdx)
 
           val logLikelihoodPerFilter: DenseVector[Double] =
-            nextBackwardFilterResult.logLikelihoodPerFilter +
+            nextBackwardFilterResult.updatedLogLikelihoodPerFilter +
               DenseVector(filterResultBeforeSwitchingPerModel.map(_.observationLogLikelihood): _*) +
               transitionLogLikelihood
 
@@ -148,9 +148,25 @@ class BackwardSquareRootViterbiFilter(backwardFilters: List[BackwardSquareRootIn
 
 object BackwardSquareRootViterbiFilter {
 
-  case class BackwardSquareRootViterbiFilterResult(logLikelihoodPerFilter: DenseVector[Double],
+  def mapEstResult(estimationResults: List[BackwardSquareRootViterbiFilterResult]): List[(FactoredGaussianDistribution, Int, Double)] = {
+
+    val firstEstimatedModel: Int = argmax(estimationResults.head.updatedLogLikelihoodPerFilter)
+
+    sequence(estimationResults.
+      map(filterResult => State[Option[Int], (FactoredGaussianDistribution, Int, Double)] {
+        selectModel =>
+          val nextModel: Option[Int] = filterResult.nextModelPerFilter.map(_ (selectModel.get))
+          val estimatedModel: Int = selectModel.get
+          val estimatedState: FactoredGaussianDistribution = filterResult.updatedEstimatePerFilter(estimatedModel)
+
+          (nextModel, (estimatedState, estimatedModel, 1.0))
+      })).eval(Some(firstEstimatedModel))
+
+  }
+
+  case class BackwardSquareRootViterbiFilterResult(updatedLogLikelihoodPerFilter: DenseVector[Double],
                                                    predictedEstimatePerFilter: List[FactoredGaussianDistribution],
                                                    updatedEstimatePerFilter: List[FactoredGaussianDistribution],
-                                                   previousModelPerFilter: Option[List[Int]])
+                                                   nextModelPerFilter: Option[List[Int]])
 
 }

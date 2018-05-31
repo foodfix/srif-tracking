@@ -59,9 +59,9 @@ class SquareRootViterbiSmoother(filters: List[SquareRootInformationFilter],
       backwardViterbiFilter(backwardLogModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
     val firstSmoothedState: SquareRootViterbiSmootherResult = {
-      val firstSmoothedModelIdx: Int = argmax(backwardResult.head.logLikelihoodPerFilter)
+      val firstSmoothedModelIdx: Int = argmax(backwardResult.head.updatedLogLikelihoodPerFilter)
       SquareRootViterbiSmootherResult(backwardResult.head.updatedEstimatePerFilter(firstSmoothedModelIdx),
-        backwardResult.head.logLikelihoodPerFilter(firstSmoothedModelIdx),
+        backwardResult.head.updatedLogLikelihoodPerFilter(firstSmoothedModelIdx),
         firstSmoothedModelIdx)
     }
 
@@ -81,7 +81,7 @@ class SquareRootViterbiSmoother(filters: List[SquareRootInformationFilter],
   def smoothStep(currentForwardResult: ForwardSquareRootViterbiFilterResult,
                  currentBackwardResult: BackwardSquareRootViterbiFilterResult, idx: Int): SquareRootViterbiSmootherResult = {
 
-    val logLikelihoods: DenseVector[Double] = currentForwardResult.predictedLogLikelihoodPerFilter + currentBackwardResult.logLikelihoodPerFilter
+    val logLikelihoods: DenseVector[Double] = currentForwardResult.predictedLogLikelihoodPerFilter + currentBackwardResult.updatedLogLikelihoodPerFilter
     val modelIdx = argmax(logLikelihoods)
 
     val forwardPredictedEstimates: FactoredGaussianDistribution = currentForwardResult.predictedEstimatePerFilter(modelIdx)
