@@ -252,24 +252,24 @@ object SquareRootIMMFilter {
   /**
     * Fuse the estimation result.
     *
-    * @param filterResults return of [[SquareRootIMMFilter]]
+    * @param estimationResults return of [[SquareRootIMMFilter]]
     * @param modelStateProjectionMatrix refer to [[SquareRootIMMFilter]]
     * @return fused estimation states
     *         estimated model index
     *         estimtaed model probability
     */
-  def fuseEstResult(filterResults: List[IMMFilterResult],
+  def fuseEstResult(estimationResults: List[IMMFilterResult],
                     modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[(FactoredGaussianDistribution, Int, Double)] = {
 
-    filterResults.map(filterResult => {
+    estimationResults.map(estimationResult => {
 
-      val selectedModel: Int = argmax(filterResult.updatedLogModeProbability)
+      val selectedModel: Int = argmax(estimationResult.updatedLogModeProbability)
 
-      val estStates: List[FactoredGaussianDistribution] = filterResult.updateResultPerFilter.map(_.updatedStateEstimation)
-      val estStateProbabilities: List[Double] = filterResult.updatedLogModeProbability.toArray.toList.map(math.exp)
-      val filterFusedState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toList, selectedModel)
+      val estStates: List[FactoredGaussianDistribution] = estimationResult.updateResultPerFilter.map(_.updatedStateEstimation)
+      val estStateProbabilities: List[Double] = estimationResult.updatedLogModeProbability.toArray.toList.map(math.exp)
+      val fusedState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toList, selectedModel)
 
-      (filterFusedState, selectedModel, estStateProbabilities(selectedModel))
+      (fusedState, selectedModel, estStateProbabilities(selectedModel))
 
     })
 
