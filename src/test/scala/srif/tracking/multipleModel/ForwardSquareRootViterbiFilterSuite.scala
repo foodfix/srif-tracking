@@ -16,7 +16,7 @@
 
 package srif.tracking.multipleModel
 
-import breeze.linalg.{DenseMatrix, DenseVector, argmax}
+import breeze.linalg.{DenseMatrix, DenseVector}
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
 import srif.tracking.example.miscTools.MultipleModel.calculateEstimationError
@@ -110,8 +110,8 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
       val mapResult = mapEstResult(result)
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
 
-      error.head should be <= 470.0
-      error.last should be >= 0.95
+      error.head should be <= 160.0
+      error.last should be >= 0.99
 
     })
 
@@ -180,8 +180,8 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
       val mapResult = mapEstResult(result)
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
 
-      error.head should be <= 5700.0
-      error.last should be >= 0.87
+      error.head should be <= 5600.0
+      error.last should be >= 0.95
 
     })
 
