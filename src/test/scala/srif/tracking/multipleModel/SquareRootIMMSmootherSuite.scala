@@ -112,9 +112,10 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
       val fusedResult = fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
-      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix, 1)
-      error.head should be <= 30.0 * 30.0
-      error.last should be >= 0.95
+      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix)
+
+      error.head should be <= 100.0
+      error.last should be >= 0.96
 
     })
 
@@ -146,8 +147,9 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
       val fusedResult = fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
-      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix, 1)
-      error.head should be <= 100.0 * 100.0
+      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix)
+
+      error.head should be <= 2400.0
       error.last should be >= 0.99
 
     })
@@ -180,9 +182,10 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
       val fusedResult = fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
-      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix, 1)
-      error.head should be <= 100.0 * 100.0
-      error.last should be >= 0.85
+      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix)
+
+      error.head should be <= 6000.0
+      error.last should be >= 0.91
 
     })
 
