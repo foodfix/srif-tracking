@@ -108,7 +108,7 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
       val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix, 1)
 
-      error.head should be <= 30.0 * 30.0
+      error.head should be <= 470.0
       error.last should be >= 0.95
 
     })
@@ -144,7 +144,7 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
       val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix, 1)
 
-      error.head should be <= 100.0 * 100.0
+      error.head should be <= 7800.0
       error.last should be >= 0.99
 
     })
@@ -180,8 +180,8 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
       val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix, 1)
 
-      error.head should be <= 100.0 * 100.0
-      error.last should be >= 0.85
+      error.head should be <= 5700.0
+      error.last should be >= 0.87
 
     })
 
