@@ -31,31 +31,6 @@ class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
 
   val numOfFilters: Int = filters.length
 
-  def onlineSmooth(logModelTransitionMatrixLst: List[DenseMatrix[Double]],
-                   observationLst: List[FactoredGaussianDistribution],
-                   squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]],
-                   stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]],
-                   invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[ForwardSquareRootViterbiSmoothResult] = {
-
-    val filterResultLst = apply(logModelTransitionMatrixLst,
-      observationLst,
-      squareRootProcessNoiseCovariancePerFilterLst,
-      stateTransitionMatrixPerFilterLst,
-      invStateTransitionMatrixPerFilterLst)
-
-    val lastModel: Int = argmax(filterResultLst.last.updatedLogLikelihoodPerFilter)
-
-    sequence(filterResultLst.reverse.
-      map(filterResult => State[Option[Int], ForwardSquareRootViterbiSmoothResult] {
-        selectModel =>
-          val previousModel: Option[Int] = filterResult.previousModelPerFilter.map(_ (selectModel.get))
-          val smoothResult = ForwardSquareRootViterbiSmoothResult(filterResult.updatedEstimatePerFilter(selectModel.get), selectModel.get)
-          (previousModel, smoothResult)
-      })).eval(Some(lastModel)).
-      reverse
-
-  }
-
   /**
     * Return the forward Viterbi filter result.
     *
@@ -173,6 +148,23 @@ class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
 }
 
 object ForwardSquareRootViterbiFilter {
+
+  def mapEstResult(estimationResults: List[ForwardSquareRootViterbiFilterResult]): List[(FactoredGaussianDistribution, Int, Double)] = {
+
+    val lastEstimatedModel: Int = argmax(estimationResults.last.updatedLogLikelihoodPerFilter)
+
+    sequence(estimationResults.reverse.
+      map(filterResult => State[Option[Int], (FactoredGaussianDistribution, Int, Double)] {
+        selectModel =>
+          val previousModel: Option[Int] = filterResult.previousModelPerFilter.map(_ (selectModel.get))
+          val estimatedModel: Int = selectModel.get
+          val estimatedState: FactoredGaussianDistribution = filterResult.updatedEstimatePerFilter(estimatedModel)
+
+          (previousModel, (estimatedState, estimatedModel, 1.0))
+      })).eval(Some(lastEstimatedModel)).
+      reverse
+
+  }
 
   case class ForwardSquareRootViterbiFilterResult(predictedLogLikelihoodPerFilter: DenseVector[Double],
                                                   updatedLogLikelihoodPerFilter: DenseVector[Double],
