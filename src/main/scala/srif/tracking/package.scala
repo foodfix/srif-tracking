@@ -141,8 +141,9 @@ package object tracking {
     */
   case class FactoredGaussianDistribution(zeta: DenseVector[Double], R: DenseMatrix[Double]) {
     def toGaussianDistribution: GaussianDistribution = GaussianDistribution(R \ zeta, inv(R.t * R))
+
     def toGaussianDistributionOption: Option[GaussianDistribution] = {
-      if (det(R)==0) None
+      if (det(R) == 0) None
       else Some(GaussianDistribution(R \ zeta, inv(R.t * R)))
     }
 

@@ -28,9 +28,9 @@ import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 /**
   * Square Root IMM Filter.
   *
-  * @param filters list of filters.
+  * @param filters                    list of filters.
   * @param modelStateProjectionMatrix used to project the state of one model to another model
-  * @param isDebugEnabled true if show debug message
+  * @param isDebugEnabled             true if show debug message
   */
 class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]], isDebugEnabled: Boolean = false) extends LazyLogging {
 
@@ -252,7 +252,7 @@ object SquareRootIMMFilter {
   /**
     * Fuse the estimation result.
     *
-    * @param estimationResults return of [[SquareRootIMMFilter]]
+    * @param estimationResults          return of [[SquareRootIMMFilter]]
     * @param modelStateProjectionMatrix refer to [[SquareRootIMMFilter]]
     * @return fused estimation states
     *         estimated model index

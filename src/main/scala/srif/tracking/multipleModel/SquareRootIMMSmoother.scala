@@ -30,9 +30,9 @@ import srif.tracking.squarerootkalman.SquareRootInformationSmoother.SmoothResult
 /**
   * Square Root IMM smoother
   *
-  * @param smoothers list of smoothers.
+  * @param smoothers                  list of smoothers.
   * @param modelStateProjectionMatrix used to project the state of one model to another model
-  * @param isDebugEnabled true if show debug message
+  * @param isDebugEnabled             true if show debug message
   */
 class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]], isDebugEnabled: Boolean = false) extends LazyLogging {
 
@@ -238,15 +238,10 @@ object SquareRootIMMSmoother {
     m(*, ::) - softmax(m(::, *)).t
   }
 
-  case class IMMSmootherState(smoothedLogModeProbability: DenseVector[Double], smoothResultPerSmoother: List[SmoothResult])
-
-  case class IMMSmootherResult(smoothedLogModeProbability: DenseVector[Double],
-                               smoothResultPerSmoother: List[SmoothResult])
-
   /**
     * Fuse the estimation result.
     *
-    * @param estimationResults return of [[SquareRootIMMSmoother]]
+    * @param estimationResults          return of [[SquareRootIMMSmoother]]
     * @param modelStateProjectionMatrix refer to [[SquareRootIMMSmoother]]
     * @return fused estimation states
     *         estimated model index
@@ -268,5 +263,10 @@ object SquareRootIMMSmoother {
     })
 
   }
+
+  case class IMMSmootherState(smoothedLogModeProbability: DenseVector[Double], smoothResultPerSmoother: List[SmoothResult])
+
+  case class IMMSmootherResult(smoothedLogModeProbability: DenseVector[Double],
+                               smoothResultPerSmoother: List[SmoothResult])
 
 }
