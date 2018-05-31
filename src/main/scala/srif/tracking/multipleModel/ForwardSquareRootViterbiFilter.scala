@@ -172,6 +172,4 @@ object ForwardSquareRootViterbiFilter {
                                                   updatedEstimatePerFilter: List[FactoredGaussianDistribution],
                                                   previousModelPerFilter: Option[List[Int]])
 
-  case class ForwardSquareRootViterbiSmoothResult(smoothedEstimate: FactoredGaussianDistribution, modelIdx: Int)
-
 }

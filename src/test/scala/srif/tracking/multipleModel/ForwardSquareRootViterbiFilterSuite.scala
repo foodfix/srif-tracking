@@ -49,38 +49,6 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
   val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
   val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, false, false)
 
-
-
-  def validateSquareRootViterbiSmootherResult(states: List[DenseVector[Double]], models: List[Int],
-                                              viterbiSmootherResult: List[ForwardSquareRootViterbiSmoothResult], modelTol: Double, stateTol: Double): Unit = {
-
-    val numOfSkippedEvent: Int = 1
-
-    val error: List[List[Double]] = List.range(0, states.length).drop(numOfSkippedEvent).map(idx => {
-
-      val state = states(idx)
-      val model: Int = models(idx)
-
-      val selectedModel: Int = viterbiSmootherResult(idx).modelIdx
-      val selectedState = viterbiSmootherResult(idx).smoothedEstimate
-      val selectedErrorVector = modelStateProjectionMatrix(0, selectedModel) * selectedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
-
-      val stateError: Double = selectedErrorVector.t * selectedErrorVector
-      val modelScore: Double = if (model == selectedModel) 1.0 else 0.0
-
-      List(stateError, modelScore)
-
-    }).transpose
-
-    val smootherStateMSE: Double = error.head.sum / (numOfEvents - numOfSkippedEvent)
-    val smootherModelScore: Double = error(1).sum / (numOfEvents - numOfSkippedEvent)
-
-    viterbiSmootherResult.length should be(numOfEvents)
-    smootherStateMSE should be <= stateTol * stateTol
-    smootherModelScore should be >= (1 - modelTol)
-
-  }
-
   "ForwardSquareRootViterbiFilter" should "detect stationary object" in {
 
     val multipleModel = new MultipleModelStructure(2, 1.0)
