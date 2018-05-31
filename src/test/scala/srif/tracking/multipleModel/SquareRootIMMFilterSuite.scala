@@ -16,13 +16,14 @@
 
 package srif.tracking.multipleModel
 
-import breeze.linalg.{*, DenseMatrix, DenseVector, argmax, sum}
+import breeze.linalg.{*, DenseMatrix, DenseVector, sum}
 import breeze.numerics.{exp, log}
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
+import srif.tracking.example.miscTools.MultipleModel.calculateEstimationError
 import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
 import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator._
-import srif.tracking.multipleModel.SquareRootIMMFilter.{IMMFilterResult, _}
+import srif.tracking.multipleModel.SquareRootIMMFilter._
 import srif.tracking.squarerootkalman.SquareRootInformationFilter
 import srif.tracking.{TargetModel, _}
 
@@ -43,7 +44,6 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
   val targetModelLst: List[TargetModel] = List(model_0, model_1)
   val initialStateLst: List[DenseVector[Double]] = List(DenseVector(0.0, 5.0, 0.0, 5.0), DenseVector(0.0, 0.0))
-  val multipleModel = new MultipleModelStructure(2, 1.0)
 
   val modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]] = DenseMatrix(
     (DenseMatrix.eye[Double](model_0.stateDim), DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)).t),
@@ -51,38 +51,6 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
   val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
   val immFilter = new SquareRootIMMFilter(filters, modelStateProjectionMatrix, false)
-
-  def validateIMMFilterResult(states: List[DenseVector[Double]], models: List[Int],
-                              immFilterResult: List[IMMFilterResult], modelTol: Double, stateTol: Double): Unit = {
-
-    val numOfSkippedEvent: Int = 1
-
-    val error: List[List[Double]] = List.range(0, states.length).drop(numOfSkippedEvent).reverse.map(idx => {
-
-      val state = states(idx)
-      val model = models(idx)
-
-      val filterStates: List[FactoredGaussianDistribution] = immFilterResult(idx).updateResultPerFilter.map(_.updatedStateEstimation)
-      val filterStateProbabilities: List[Double] = immFilterResult(idx).updatedLogModeProbability.toArray.toList.map(math.exp)
-      val filterModel: Int = argmax(immFilterResult(idx).updatedLogModeProbability)
-      val filterFusedState = calculateGaussianMixtureDistribution(filterStates, filterStateProbabilities, modelStateProjectionMatrix(filterModel, ::).t.toArray.toList, filterModel)
-      val filterErrorVector = modelStateProjectionMatrix(0, filterModel) * filterFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
-
-      val filterStateError: Double = filterErrorVector.t * filterErrorVector
-      val filterModelScore: Double = filterStateProbabilities(model)
-
-      List(filterStateError, filterModelScore)
-
-    }).transpose
-
-    val immFilterStateMSE: Double = error.head.sum / (numOfEvents - numOfSkippedEvent)
-    val immFilterModelScore: Double = error(1).sum / (numOfEvents - numOfSkippedEvent)
-
-    immFilterResult.length should be(numOfEvents)
-    immFilterStateMSE should be <= stateTol * stateTol
-    immFilterModelScore should be >= (1 - modelTol)
-
-  }
 
   "calculateLogMixingWeight" should "compute the mixing weight" in {
 
@@ -136,7 +104,12 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
       val result = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateIMMFilterResult(states, models, result, 0.05, 30)
+      val fusedResult = fuseEstResult(result, modelStateProjectionMatrix)
+
+      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix, 1)
+
+      error.head should be <= 30.0 * 30.0
+      error.last should be >= 0.95
 
     })
 
@@ -167,7 +140,12 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
       val result = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateIMMFilterResult(states, models, result, 0.01, 100)
+      val fusedResult = fuseEstResult(result, modelStateProjectionMatrix)
+
+      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix, 1)
+
+      error.head should be <= 100.0 * 100.0
+      error.last should be >= 0.99
 
     })
 
@@ -198,7 +176,12 @@ class SquareRootIMMFilterSuite extends FlatSpec with Matchers {
 
       val result = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateIMMFilterResult(states, models, result, 0.15, 100)
+      val fusedResult = fuseEstResult(result, modelStateProjectionMatrix)
+
+      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix, 1)
+
+      error.head should be <= 100.0 * 100.0
+      error.last should be >= 0.85
 
     })
 
