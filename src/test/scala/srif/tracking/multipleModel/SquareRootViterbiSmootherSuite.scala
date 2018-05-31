@@ -49,7 +49,9 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
   val forwardFilters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
   val backwardFilters: List[BackwardSquareRootInformationFilter] = List(new BackwardSquareRootInformationFilter(model_0, false), new BackwardSquareRootInformationFilter(model_1, false))
 
-  val viterbiSmoother = new SquareRootViterbiSmoother(forwardFilters, backwardFilters, modelStateProjectionMatrix, false)
+  val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(forwardFilters, modelStateProjectionMatrix, false, false)
+  val backwardViterbiFilter = new BackwardSquareRootViterbiFilter(backwardFilters, modelStateProjectionMatrix, false)
+  val viterbiSmoother = new SquareRootViterbiSmoother
 
   "SquareRootViterbiSmoother" should "detect stationary object" in {
 
@@ -61,6 +63,7 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
         MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
+      val backwardLogModelTransitionMatrixLst: List[DenseMatrix[Double]] = logModelTransitionMatrixLst.tail ::: List(logModelTransitionMatrixLst.head)
 
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
         val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
@@ -76,7 +79,9 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val result = viterbiSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val forwardFilerResult = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val backwardFilterResult = backwardViterbiFilter(backwardLogModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val result = viterbiSmoother(forwardFilerResult, backwardFilterResult)
       val error: List[Double] = calculateEstimationError(result, states, models, modelStateProjectionMatrix)
 
       error.head should be <= 60.0
@@ -95,6 +100,8 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
       val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 0, initialStateLst, numOfEvents, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
+      val backwardLogModelTransitionMatrixLst: List[DenseMatrix[Double]] = logModelTransitionMatrixLst.tail ::: List(logModelTransitionMatrixLst.head)
+
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
         val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
         GaussianDistribution(x, covarianceMatrix).toFactoredGaussianDistribution
@@ -109,7 +116,10 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val result = viterbiSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val forwardFilerResult = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val backwardFilterResult = backwardViterbiFilter(backwardLogModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val result = viterbiSmoother(forwardFilerResult, backwardFilterResult)
+
       val error: List[Double] = calculateEstimationError(result, states, models, modelStateProjectionMatrix)
 
       error.head should be <= 2400.0
@@ -128,6 +138,8 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
       val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEvents, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
+      val backwardLogModelTransitionMatrixLst: List[DenseMatrix[Double]] = logModelTransitionMatrixLst.tail ::: List(logModelTransitionMatrixLst.head)
+
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
         val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
         GaussianDistribution(x, covarianceMatrix).toFactoredGaussianDistribution
@@ -142,7 +154,9 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val result = viterbiSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val forwardFilerResult = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val backwardFilterResult = backwardViterbiFilter(backwardLogModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val result = viterbiSmoother(forwardFilerResult, backwardFilterResult)
       val error: List[Double] = calculateEstimationError(result, states, models, modelStateProjectionMatrix)
 
       error.head should be <= 3700.0

@@ -16,46 +16,18 @@
 
 package srif.tracking.multipleModel
 
-import breeze.linalg.{DenseMatrix, DenseVector, argmax, qr, softmax}
+import breeze.linalg.{DenseMatrix, DenseVector, argmax, qr}
 import com.typesafe.scalalogging.LazyLogging
 import srif.tracking.FactoredGaussianDistribution
 import srif.tracking.multipleModel.BackwardSquareRootViterbiFilter.BackwardSquareRootViterbiFilterResult
 import srif.tracking.multipleModel.ForwardSquareRootViterbiFilter.ForwardSquareRootViterbiFilterResult
-import srif.tracking.squarerootkalman.{BackwardSquareRootInformationFilter, SquareRootInformationFilter}
 
-class SquareRootViterbiSmoother(filters: List[SquareRootInformationFilter],
-                                backwardFilters: List[BackwardSquareRootInformationFilter],
-                                modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-                                isDebugEnabled: Boolean = false) extends LazyLogging {
+class SquareRootViterbiSmoother extends LazyLogging {
 
-  val numOfFilters: Int = filters.length
-  val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, true, isDebugEnabled)
-  val backwardViterbiFilter = new BackwardSquareRootViterbiFilter(backwardFilters, modelStateProjectionMatrix, isDebugEnabled)
+  def apply(forwardResult: List[ForwardSquareRootViterbiFilterResult],
+            backwardResult: List[BackwardSquareRootViterbiFilterResult]): List[(FactoredGaussianDistribution, Int, Double)] = {
 
-  /**
-    * Return the forward Viterbi filter result.
-    *
-    * @param logModelTransitionMatrixLst                  logarithmic model transition matrix for each timestamp
-    * @param observationLst                               observation for each timestamp
-    * @param squareRootProcessNoiseCovariancePerFilterLst process noise covariance matrix in square root form for each timestamp
-    * @param stateTransitionMatrixPerFilterLst            state transition matrix for each timestamp
-    * @param invStateTransitionMatrixPerFilterLst         inverse of state transition matrix for each timestamp
-    * @return filter result for each timestamp
-    */
-  def apply(logModelTransitionMatrixLst: List[DenseMatrix[Double]],
-            observationLst: List[FactoredGaussianDistribution],
-            squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]],
-            stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]],
-            invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[(FactoredGaussianDistribution, Int, Double)] = {
-
-    val numOfTimeSteps: Int = observationLst.length
-
-    val forwardResult: List[ForwardSquareRootViterbiFilterResult] =
-      forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
-
-    val backwardLogModelTransitionMatrixLst: List[DenseMatrix[Double]] = logModelTransitionMatrixLst.tail ::: List(logModelTransitionMatrixLst.head)
-    val backwardResult: List[BackwardSquareRootViterbiFilterResult] =
-      backwardViterbiFilter(backwardLogModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+    val numOfTimeSteps: Int = forwardResult.length
 
     val firstSmoothedState: (FactoredGaussianDistribution, Int, Double) = {
       val firstSmoothedModelIdx: Int = argmax(backwardResult.head.updatedLogLikelihoodPerFilter)
