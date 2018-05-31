@@ -1,8 +1,20 @@
 name := "srif-tracking"
 
-version := "1.2"
+organization := "com.github.foodfix"
+
+version := "0.5-SNAPSHOT"
 
 scalaVersion := "2.11.12"
+
+publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}
+
+credentials += Credentials(Path.userHome / ".ivy2" / "credentials")
 
 // https://mvnrepository.com/artifact/org.scalanlp/breeze
 libraryDependencies += "org.scalanlp" %% "breeze" % "0.13.2"

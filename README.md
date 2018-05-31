@@ -2,12 +2,10 @@
 
 This repository implemented
 
-- *Square-root information filter*,
-- *Backward square-root information filter*,
-- *Square-root information smoother*,
-- *Square-root information smoother as forward-backward*,
-- *Square-root interacting multiple model (IMM) filter* and
-- *Square-root IMM smoother*.
+- *Square-root information filter and smoother*,
+- *Square-root interacting multiple model (IMM) filter smoother*
+- *Square-root IMM filter and smoother* and
+- *Square-root Viterbi Algorithm*
 
 ### How It Works
 
@@ -17,9 +15,8 @@ The algorithms are described in the [tex/algorithm.pdf](tex/algorithm.pdf).
 
 A few examples are included:
 
-- [Forward and Backward Square-root information filter](src/main/scala/srif/tracking/example/UniModelFilterExample.scala)
-- [Square-root information smoother (including forward-backward algorithm)](src/main/scala/srif/tracking/example/UniModelSmootherExample.scala)
-- [IMM filter and smoother](src/main/scala/srif/tracking/example/MultipleModelExample.scala).
+- [Uni-model filter and smoother](src/main/scala/srif/tracking/example/UniModelExample.scala)
+- [Multiple model filter and smoother](src/main/scala/srif/tracking/example/MultipleModelExample.scala).
 
 ### Reference
 

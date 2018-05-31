@@ -16,7 +16,7 @@
 
 package srif.tracking.multipleModel
 
-import breeze.linalg.{*, DenseMatrix, DenseVector, det, softmax}
+import breeze.linalg.{*, DenseMatrix, DenseVector, argmax, det, softmax}
 import breeze.numerics.exp
 import com.typesafe.scalalogging.LazyLogging
 import scalaz.State
@@ -25,6 +25,13 @@ import srif.tracking.squarerootkalman.SquareRootInformationFilter
 import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
 import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 
+/**
+  * Square Root IMM Filter.
+  *
+  * @param filters                    list of filters.
+  * @param modelStateProjectionMatrix used to project the state of one model to another model
+  * @param isDebugEnabled             true if show debug message
+  */
 class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]], isDebugEnabled: Boolean = false) extends LazyLogging {
 
   val numOfFilters: Int = filters.length
@@ -60,8 +67,8 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
 
     for (i <- List.range(0, numOfFilters);
          j <- List.range(0, numOfFilters)) yield {
-      modelStateProjectionMatrix(i, j).rows == filters(j).getTargetModel.stateDim
-      modelStateProjectionMatrix(i, j).cols == filters(i).getTargetModel.stateDim
+      require(modelStateProjectionMatrix(i, j).rows == filters(i).getTargetModel.stateDim)
+      require(modelStateProjectionMatrix(i, j).cols == filters(j).getTargetModel.stateDim)
     }
 
     val initialLogModeProbability: DenseVector[Double] = DenseVector.fill[Double](numOfFilters, math.log(1.0 / numOfFilters))
@@ -240,6 +247,32 @@ object SquareRootIMMFilter {
     val m = logModelTransitionMatrix(*, ::) + logModelProbabilities
     val predictedLogModelProbability = softmax(m(*, ::))
     (m(::, *) - predictedLogModelProbability, predictedLogModelProbability)
+  }
+
+  /**
+    * Fuse the estimation result.
+    *
+    * @param estimationResults          return of [[SquareRootIMMFilter]]
+    * @param modelStateProjectionMatrix refer to [[SquareRootIMMFilter]]
+    * @return fused estimation states
+    *         estimated model index
+    *         estimtaed model probability
+    */
+  def fuseEstResult(estimationResults: List[IMMFilterResult],
+                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[(FactoredGaussianDistribution, Int, Double)] = {
+
+    estimationResults.map(estimationResult => {
+
+      val selectedModel: Int = argmax(estimationResult.updatedLogModeProbability)
+
+      val estStates: List[FactoredGaussianDistribution] = estimationResult.updateResultPerFilter.map(_.updatedStateEstimation)
+      val estStateProbabilities: List[Double] = estimationResult.updatedLogModeProbability.toArray.toList.map(math.exp)
+      val fusedState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toList, selectedModel)
+
+      (fusedState, selectedModel, estStateProbabilities(selectedModel))
+
+    })
+
   }
 
   case class IMMFilterResult(updatedLogModeProbability: DenseVector[Double],

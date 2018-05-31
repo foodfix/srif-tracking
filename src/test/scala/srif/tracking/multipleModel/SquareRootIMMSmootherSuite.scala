@@ -16,14 +16,14 @@
 
 package srif.tracking.multipleModel
 
-import breeze.linalg.{*, DenseMatrix, DenseVector, argmax, sum}
+import breeze.linalg.{*, DenseMatrix, DenseVector, sum}
 import breeze.numerics.{exp, log}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
+import srif.tracking.example.miscTools.MultipleModel.calculateEstimationError
 import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
 import srif.tracking.example.sampleDataGeneration.UniModelTestDataGenerator.{getNormalizedVector, getRandomTransitionMatrix}
-import srif.tracking.multipleModel.SquareRootIMMFilter.IMMFilterResult
 import srif.tracking.multipleModel.SquareRootIMMSmoother._
 import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootInformationSmoother}
 import srif.tracking.{TargetModel, _}
@@ -55,63 +55,6 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
 
   val smoothers: List[SquareRootInformationSmoother] = List(new SquareRootInformationSmoother(model_0, false), new SquareRootInformationSmoother(model_1, false))
   val immSmoother = new SquareRootIMMSmoother(smoothers, modelStateProjectionMatrix, false)
-
-  def validateIMMSmootherResult(states: List[DenseVector[Double]],
-                                models: List[Int],
-                                immFilterResult: List[IMMFilterResult],
-                                immSmootherResult: List[IMMSmootherResult],
-                                modelTol: Double,
-                                stateTol: Double,
-                                isDebugEnabled: Boolean = false): Unit = {
-
-
-    val numOfSkippedEvent: Int = 1
-
-    val error: List[List[Double]] = List.range(0, states.length).drop(numOfSkippedEvent).reverse.map(idx => {
-
-      val state = states(idx)
-      val model = models(idx)
-
-      val filterStates: List[FactoredGaussianDistribution] = immFilterResult(idx).updateResultPerFilter.map(_.updatedStateEstimation)
-      val filterStateProbabilities: List[Double] = immFilterResult(idx).updatedLogModeProbability.toArray.toList.map(math.exp)
-      val filterModel: Int = argmax(immFilterResult(idx).updatedLogModeProbability)
-      val filterFusedState = calculateGaussianMixtureDistribution(filterStates, filterStateProbabilities, modelStateProjectionMatrix(filterModel, ::).t.toArray.toList, filterModel)
-      val filterErrorVector = modelStateProjectionMatrix(0, filterModel) * filterFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
-
-      val smoothStates: List[FactoredGaussianDistribution] = immSmootherResult(idx).smoothResultPerSmoother.map(_.smoothedStateEstimation)
-      val smoothProbabilities: List[Double] = immSmootherResult(idx).smoothedLogModeProbability.toArray.toList.map(math.exp)
-      val smoothModel: Int = argmax(immSmootherResult(idx).smoothedLogModeProbability)
-      val smoothFusedState = calculateGaussianMixtureDistribution(smoothStates, smoothProbabilities, modelStateProjectionMatrix(smoothModel, ::).t.toArray.toList, smoothModel)
-      val smoothErrorVector = modelStateProjectionMatrix(0, smoothModel) * smoothFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
-
-      val filterStateError: Double = filterErrorVector.t * filterErrorVector
-      val smoothStateError: Double = smoothErrorVector.t * smoothErrorVector
-
-      val filterModelScore: Double = filterStateProbabilities(model)
-      val smoothModelScore: Double = smoothProbabilities(model)
-
-      List(filterStateError, smoothStateError, filterModelScore, smoothModelScore)
-
-    }).transpose
-
-    val immFilterStateMSE: Double = error.head.sum / (numOfEvents - numOfSkippedEvent)
-    val immSmootherStateMSE: Double = error(1).sum / (numOfEvents - numOfSkippedEvent)
-
-    val immFilterModelScore: Double = error(2).sum / (numOfEvents - numOfSkippedEvent)
-    val immSmootherModelScore: Double = error(3).sum / (numOfEvents - numOfSkippedEvent)
-
-    immFilterResult.length should be(numOfEvents)
-    immSmootherResult.length should be(numOfEvents)
-    
-    immFilterStateMSE should be <= stateTol * stateTol
-    immSmootherStateMSE should be <= stateTol * stateTol
-
-    immFilterModelScore should be >= (1 - modelTol)
-    immSmootherModelScore should be >= (1 - modelTol)
-
-    immFilterModelScore should be <= immSmootherModelScore
-
-  }
 
   "calculateBackwardLogMixingWeight" should "compute the backward mixing weight" in {
 
@@ -166,10 +109,13 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateIMMSmootherResult(states, models, immFilterResult, immSmootherResult, 0.05, 30, false)
+      val fusedResult = fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
+      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix)
+
+      error.head should be <= 100.0
+      error.last should be >= 0.96
 
     })
 
@@ -198,10 +144,13 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateIMMSmootherResult(states, models, immFilterResult, immSmootherResult, 0.01, 100, false)
+      val fusedResult = fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
+      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix)
+
+      error.head should be <= 2400.0
+      error.last should be >= 0.99
 
     })
 
@@ -230,10 +179,13 @@ class SquareRootIMMSmootherSuite extends FlatSpec with Matchers with LazyLogging
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      validateIMMSmootherResult(states, models, immFilterResult, immSmootherResult, 0.15, 100, false)
+      val fusedResult = fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
+      val error: List[Double] = calculateEstimationError(fusedResult, states, models, modelStateProjectionMatrix)
+
+      error.head should be <= 6000.0
+      error.last should be >= 0.91
 
     })
 

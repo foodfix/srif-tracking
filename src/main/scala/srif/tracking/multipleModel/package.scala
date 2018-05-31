@@ -83,19 +83,6 @@ package object multipleModel {
     * @param p1 probability of first [[FactoredGaussianDistribution]]
     * @param x2 second [[FactoredGaussianDistribution]]
     * @param p2 probability of second [[FactoredGaussianDistribution]]
-    * @return
-    */
-  def mixtureTwoDistribution(x1: FactoredGaussianDistribution, p1: Double,
-                             x2: FactoredGaussianDistribution, p2: Double): (FactoredGaussianDistribution, Double) =
-    mixtureTwoDistribution(x1, p1, x2, p2, DenseMatrix.eye[Double](x2.zeta.length))
-
-  /**
-    * Mix two [[FactoredGaussianDistribution]]
-    *
-    * @param x1 first [[FactoredGaussianDistribution]]
-    * @param p1 probability of first [[FactoredGaussianDistribution]]
-    * @param x2 second [[FactoredGaussianDistribution]]
-    * @param p2 probability of second [[FactoredGaussianDistribution]]
     * @param A  lifting matrix, it lefts x2 to the same dimension of x1
     * @return
     */
@@ -129,5 +116,18 @@ package object multipleModel {
     }
 
   }
+
+  /**
+    * Mix two [[FactoredGaussianDistribution]]
+    *
+    * @param x1 first [[FactoredGaussianDistribution]]
+    * @param p1 probability of first [[FactoredGaussianDistribution]]
+    * @param x2 second [[FactoredGaussianDistribution]]
+    * @param p2 probability of second [[FactoredGaussianDistribution]]
+    * @return
+    */
+  def mixtureTwoDistribution(x1: FactoredGaussianDistribution, p1: Double,
+                             x2: FactoredGaussianDistribution, p2: Double): (FactoredGaussianDistribution, Double) =
+    mixtureTwoDistribution(x1, p1, x2, p2, DenseMatrix.eye[Double](x2.zeta.length))
 
 }

@@ -18,7 +18,7 @@ package srif.tracking.example.sampleDataGeneration
 
 import breeze.linalg.{DenseMatrix, DenseVector, diag, sum}
 import breeze.stats.distributions.{MultivariateGaussian, RandBasis}
-import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
+import srif.tracking.{GaussianDistribution, TargetModel}
 
 import scala.util.Random
 

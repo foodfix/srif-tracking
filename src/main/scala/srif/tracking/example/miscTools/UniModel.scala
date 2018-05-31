@@ -16,14 +16,10 @@
 
 package srif.tracking.example.miscTools
 
-import java.io.PrintWriter
-
-import breeze.linalg.{DenseVector, det}
+import breeze.linalg.DenseVector
 import srif.tracking.FactoredGaussianDistribution
 
 object UniModel {
-
-  val sampleResultFolder: String = "sampleResults"
 
   def calculateEstimationError(estimatedStates: List[FactoredGaussianDistribution],
                                states: List[DenseVector[Double]],
@@ -38,43 +34,4 @@ object UniModel {
     }).sum / (states.length - dropRight - dropLeft)
   }
 
-  def writeToCSV(states: List[DenseVector[Double]],
-                 observationVectorLst: List[DenseVector[Double]],
-                 estimatedStates: List[FactoredGaussianDistribution],
-                 fileName: String): Unit = {
-
-    val headers = Seq("STATE_X", "STATE_DOT_X", "STATE_Y", "STATE_DOT_Y", "OBS_X", "OBS_Y",
-      "EST_X", "EST_DOT_X", "EST_Y", "EST_DOT_Y", "MSE")
-
-    val records: Seq[Seq[String]] = List.range(0, states.length).map(idx => {
-
-      val stateXY = states(idx)
-      val observationXY = observationVectorLst(idx)
-
-      if (det(estimatedStates(idx).R) == 0)
-        Seq(stateXY(0).toString, stateXY(1).toString, stateXY(2).toString, stateXY(3).toString,
-          observationXY(0).toString, observationXY(1).toString,
-          "", "", "", "", "")
-      else {
-
-        val estimatedXY = estimatedStates(idx).toGaussianDistribution.m
-
-        val errorVector: DenseVector[Double] = estimatedXY - stateXY
-
-        Seq(stateXY(0), stateXY(1), stateXY(2), stateXY(3),
-          observationXY(0), observationXY(1),
-          estimatedXY(0), estimatedXY(1), estimatedXY(2), estimatedXY(3),
-          errorVector.t * errorVector).map(_.toString)
-      }
-    })
-
-    val allRows: Seq[Seq[String]] = Seq(headers) ++ records
-
-    val csv: String = allRows.map(_.mkString(",")).mkString("\n")
-
-    new PrintWriter(fileName) {
-      write(csv)
-      close()
-    }
-  }
 }
