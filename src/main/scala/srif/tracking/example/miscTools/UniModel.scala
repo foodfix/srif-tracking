@@ -23,8 +23,6 @@ import srif.tracking.FactoredGaussianDistribution
 
 object UniModel {
 
-  val sampleResultFolder: String = "sampleResults"
-
   def calculateEstimationError(estimatedStates: List[FactoredGaussianDistribution],
                                states: List[DenseVector[Double]],
                                dropLeft: Int = 0, dropRight: Int = 0): Double = {

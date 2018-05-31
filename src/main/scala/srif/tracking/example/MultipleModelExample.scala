@@ -16,13 +16,14 @@
 
 package srif.tracking.example
 
-import breeze.linalg.{DenseMatrix, DenseVector, argmax}
+import java.io.PrintWriter
+
+import breeze.linalg.{DenseMatrix, DenseVector, det}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
+import srif.tracking.example.miscTools.MultipleModel.calculateEstimationError
 import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
-import srif.tracking.multipleModel.SquareRootIMMFilter.IMMFilterResult
-import srif.tracking.multipleModel.SquareRootIMMSmoother.IMMSmootherResult
-import srif.tracking.multipleModel.{MultipleModelStructure, SquareRootIMMFilter, SquareRootIMMSmoother, calculateGaussianMixtureDistribution}
-import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootInformationSmoother}
+import srif.tracking.multipleModel._
+import srif.tracking.squarerootkalman.{BackwardSquareRootInformationFilter, SquareRootInformationFilter, SquareRootInformationSmoother}
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
 object MultipleModelExample {
@@ -52,96 +53,121 @@ object MultipleModelExample {
       (DenseMatrix.eye[Double](model_0.stateDim), DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)).t),
       (DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)), DenseMatrix.eye[Double](model_1.stateDim)))
 
-    //Define IMM filter over possible models
-    val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
-    val immFilter = new SquareRootIMMFilter(filters, modelStateProjectionMatrix, false)
+    val forwardFilters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
+    val backwardFilters: List[BackwardSquareRootInformationFilter] = List(new BackwardSquareRootInformationFilter(model_0, false), new BackwardSquareRootInformationFilter(model_1, false))
 
-    //Define IMM smoothers over possible models
+    val immFilter = new SquareRootIMMFilter(forwardFilters, modelStateProjectionMatrix, false)
+    val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(forwardFilters, modelStateProjectionMatrix, false, false)
+    val backwardViterbiFilter = new BackwardSquareRootViterbiFilter(backwardFilters, modelStateProjectionMatrix, false)
+
     val smoothers: List[SquareRootInformationSmoother] = List(new SquareRootInformationSmoother(model_0, false), new SquareRootInformationSmoother(model_1, false))
+
     val immSmoother = new SquareRootIMMSmoother(smoothers, modelStateProjectionMatrix, false)
+    val viterbiSmoother = new SquareRootViterbiSmoother
 
     val multipleModel = new MultipleModelStructure(2, 1.0 - modelSwitchingProbabilityPerUnitTime)
 
     seeds.foreach(seed => {
 
-      val (models, states, observations, stepSizeLst) = MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEventsPerTestCase, multipleModel, observationStd, modelStateProjectionMatrix, seed)
+      val (models, states, observations, stepSizeLst) =
+        MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEventsPerTestCase, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
+      val backwardLogModelTransitionMatrixLst: List[DenseMatrix[Double]] = logModelTransitionMatrixLst.tail ::: List(logModelTransitionMatrixLst.head)
+
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
         val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
         GaussianDistribution(x, covarianceMatrix).toFactoredGaussianDistribution
       })
-      val squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
+      val squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]] = forwardFilters.map(
         f => stepSizeLst.map(f.getTargetModel.calculateSquareRootProcessNoiseCovariance)
       ).transpose
-      val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
+      val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = forwardFilters.map(
         f => stepSizeLst.map(f.getTargetModel.calculateStateTransitionMatrix)
       ).transpose
-      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = smoothers.map(
+      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = forwardFilters.map(
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
       val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
-      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val fusedIMMFilterResult: List[(FactoredGaussianDistribution, Int, Double)] = SquareRootIMMFilter.fuseEstResult(immFilterResult, modelStateProjectionMatrix)
+      outputSampleResult("IMMFilter", seed, observations, fusedIMMFilterResult, states, models, modelStateProjectionMatrix, 1, 0)
 
-      outputSampleResult(states, models, immFilterResult, immSmootherResult, 0.15, 100, modelStateProjectionMatrix, numOfEventsPerTestCase)
+      val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val fusedIMMSmootherResult: List[(FactoredGaussianDistribution, Int, Double)] = SquareRootIMMSmoother.fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
+      outputSampleResult("IMMSmoother", seed, observations, fusedIMMSmootherResult, states, models, modelStateProjectionMatrix, 0, 0)
+
+      val forwardViterbiResult = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val mapForwardViterbiResult: List[(FactoredGaussianDistribution, Int, Double)] = ForwardSquareRootViterbiFilter.mapEstResult(forwardViterbiResult)
+      outputSampleResult("ForwardViterbi", seed, observations, mapForwardViterbiResult, states, models, modelStateProjectionMatrix, 1, 0)
+
+      val backwardViterbiResult = backwardViterbiFilter(backwardLogModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val mapBackwardViterbiResult: List[(FactoredGaussianDistribution, Int, Double)] = BackwardSquareRootViterbiFilter.mapEstResult(backwardViterbiResult)
+      outputSampleResult("BackwardViterbi", seed, observations, mapBackwardViterbiResult, states, models, modelStateProjectionMatrix, 0, 1)
+
+      val viterbiSmootherResult: List[(FactoredGaussianDistribution, Int, Double)] = viterbiSmoother(forwardViterbiResult, backwardViterbiResult)
+      outputSampleResult("ViterbiSmoother", seed, observations, viterbiSmootherResult, states, models, modelStateProjectionMatrix, 0, 0)
 
     })
 
   }
 
-  def outputSampleResult(states: List[DenseVector[Double]],
-                         models: List[Int],
-                         immFilterResult: List[IMMFilterResult],
-                         immSmootherResult: List[IMMSmootherResult],
-                         modelTol: Double,
-                         stateTol: Double,
+  def outputSampleResult(estimatorName: String,
+                         seed: Int,
+                         observationVectorLst: List[DenseVector[Double]],
+                         estimatedResult: List[(FactoredGaussianDistribution, Int, Double)],
+                         trueStates: List[DenseVector[Double]], trueModels: List[Int],
                          modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-                         numOfEvents: Int): Unit = {
+                         dropLeft: Int, dropRight: Int) = {
 
-
-    val numOfSkippedEvent: Int = 1
-
-    val error: List[List[Double]] = List.range(0, states.length).drop(numOfSkippedEvent).reverse.map(idx => {
-
-      //True state
-      val state = states(idx)
-      //True model
-      val model = models(idx)
-
-      //Filtered estimations:
-      val filterStates: List[FactoredGaussianDistribution] = immFilterResult(idx).updateResultPerFilter.map(_.updatedStateEstimation)
-      val filterStateProbabilities: List[Double] = immFilterResult(idx).updatedLogModeProbability.toArray.toList.map(math.exp)
-      val filterModel: Int = argmax(immFilterResult(idx).updatedLogModeProbability)
-      val filterFusedState = calculateGaussianMixtureDistribution(filterStates, filterStateProbabilities, modelStateProjectionMatrix(filterModel, ::).t.toArray.toList, filterModel)
-      val filterErrorVector = modelStateProjectionMatrix(0, filterModel) * filterFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
-
-      //Smooth estimations:
-      val smoothStates: List[FactoredGaussianDistribution] = immSmootherResult(idx).smoothResultPerSmoother.map(_.smoothedStateEstimation)
-      val smoothProbabilities: List[Double] = immSmootherResult(idx).smoothedLogModeProbability.toArray.toList.map(math.exp)
-      val smoothModel: Int = argmax(immSmootherResult(idx).smoothedLogModeProbability)
-      val smoothFusedState = calculateGaussianMixtureDistribution(smoothStates, smoothProbabilities, modelStateProjectionMatrix(smoothModel, ::).t.toArray.toList, smoothModel)
-      val smoothErrorVector = modelStateProjectionMatrix(0, smoothModel) * smoothFusedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
-
-      val filterStateError: Double = filterErrorVector.t * filterErrorVector
-      val smoothStateError: Double = smoothErrorVector.t * smoothErrorVector
-
-      val filterModelScore: Double = filterStateProbabilities(model)
-      val smoothModelScore: Double = smoothProbabilities(model)
-
-      List(filterStateError, smoothStateError, filterModelScore, smoothModelScore)
-
-    }).transpose
-
-    val immFilterStateMSE: Double = error.head.sum / (numOfEvents - numOfSkippedEvent)
-    val immSmootherStateMSE: Double = error(1).sum / (numOfEvents - numOfSkippedEvent)
-
-    val immFilterModelScore: Double = error(2).sum / (numOfEvents - numOfSkippedEvent)
-    val immSmootherModelScore: Double = error(3).sum / (numOfEvents - numOfSkippedEvent)
-
-
-    println(s"IMM Filter MSE: $immFilterStateMSE,\tIMM Smoother MSE: $immSmootherStateMSE," +
-      s"\tIMM Filter Model Score: $immFilterModelScore,\tIMM Smoother Model Score: $immSmootherModelScore")
+    val error = calculateEstimationError(estimatedResult, trueStates, trueModels, modelStateProjectionMatrix, dropLeft, dropRight)
+    println(s"$estimatorName, \tState MSE: ${error.head}, \tModel Mean Error: ${error.last}.")
+    writeToCSV(trueStates, trueModels, observationVectorLst, estimatedResult, modelStateProjectionMatrix, s"$sampleResultFolder/${estimatorName}_result_$seed.csv")
 
   }
+
+  def writeToCSV(trueStates: List[DenseVector[Double]],
+                 trueModels: List[Int],
+                 observationVectorLst: List[DenseVector[Double]],
+                 estimatedResults: List[(FactoredGaussianDistribution, Int, Double)],
+                 modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
+                 fileName: String): Unit = {
+
+    val headers = Seq("MODEL", "STATE_X", "STATE_DOT_X", "STATE_Y", "STATE_DOT_Y", "OBS_X", "OBS_Y",
+      "EST_MODEL", "EST_MODEL_PROB",
+      "EST_X", "EST_DOT_X", "EST_Y", "EST_DOT_Y", "MSE")
+
+    val records: Seq[Seq[String]] = List.range(0, trueStates.length).map(idx => {
+
+      val model = trueModels(idx)
+      val stateXY = modelStateProjectionMatrix(0, model) * trueStates(idx)
+      val observationXY = observationVectorLst(idx)
+
+      val estiamtedResult = estimatedResults(idx)
+      val estiamtedModel = estiamtedResult._2
+      val estiamtedModelProbability = estiamtedResult._3
+
+      val firstHalfRow: Seq[String] = Seq(model.toString, stateXY(0).toString, stateXY(1).toString, stateXY(2).toString, stateXY(3).toString,
+        observationXY(0).toString, observationXY(1).toString,
+        estiamtedModel.toString, estiamtedModelProbability.toString)
+
+      if (det(estiamtedResult._1.R) == 0)
+        firstHalfRow ++ Seq("", "", "", "", "")
+      else {
+        val estimatedXY = modelStateProjectionMatrix(0, estiamtedModel) * estiamtedResult._1.toGaussianDistribution.m
+        val errorVector: DenseVector[Double] = estimatedXY - stateXY
+        firstHalfRow ++ Seq(estimatedXY(0), estimatedXY(1), estimatedXY(2), estimatedXY(3), errorVector.t * errorVector).map(_.toString)
+      }
+    })
+
+    val allRows: Seq[Seq[String]] = Seq(headers) ++ records
+
+    val csv: String = allRows.map(_.mkString(",")).mkString("\n")
+
+    new PrintWriter(fileName) {
+      write(csv)
+      close()
+    }
+  }
+
 }
