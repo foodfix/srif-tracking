@@ -19,8 +19,8 @@ package srif.tracking.multipleModel
 import breeze.linalg.{DenseMatrix, DenseVector}
 import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
+import srif.tracking.example.miscTools.MultipleModel.calculateEstimationError
 import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
-import srif.tracking.multipleModel.SquareRootViterbiSmoother.SquareRootViterbiSmootherResult
 import srif.tracking.squarerootkalman.{BackwardSquareRootInformationFilter, SquareRootInformationFilter}
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
@@ -51,36 +51,6 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
 
   val viterbiSmoother = new SquareRootViterbiSmoother(forwardFilters, backwardFilters, modelStateProjectionMatrix, false)
 
-  def validateSquareRootViterbiSmootherResult(states: List[DenseVector[Double]], models: List[Int],
-                                              viterbiSmootherResult: List[SquareRootViterbiSmootherResult], modelTol: Double, stateTol: Double): Unit = {
-
-    val numOfSkippedEvent: Int = 0
-
-    val error: List[List[Double]] = List.range(0, states.length).map(idx => {
-
-      val state = states(idx)
-      val model: Int = models(idx)
-
-      val selectedModel: Int = viterbiSmootherResult(idx).modelIdx
-      val selectedState = viterbiSmootherResult(idx).smoothedEstimate
-      val selectedErrorVector = modelStateProjectionMatrix(0, selectedModel) * selectedState.toGaussianDistribution.m - modelStateProjectionMatrix(0, model) * state
-
-      val stateError: Double = selectedErrorVector.t * selectedErrorVector
-      val modelScore: Double = if (model == selectedModel) 1.0 else 0.0
-
-      List(stateError, modelScore)
-
-    }).transpose
-
-    val smootherStateMSE: Double = error.head.sum / (numOfEvents - numOfSkippedEvent)
-    val smootherModelScore: Double = error(1).sum / (numOfEvents - numOfSkippedEvent)
-
-    viterbiSmootherResult.length should be(numOfEvents)
-    smootherStateMSE should be <= stateTol * stateTol
-    smootherModelScore should be >= (1 - modelTol)
-
-  }
-
   "SquareRootViterbiSmoother" should "detect stationary object" in {
 
     val multipleModel = new MultipleModelStructure(2, 1.0)
@@ -107,8 +77,10 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
       ).transpose
 
       val result = viterbiSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val error: List[Double] = calculateEstimationError(result, states, models, modelStateProjectionMatrix)
 
-      validateSquareRootViterbiSmootherResult(states, models, result, 0.05, 30)
+      error.head should be <= 60.0
+      error.last should be >= 0.99
 
     })
 
@@ -138,8 +110,10 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
       ).transpose
 
       val result = viterbiSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val error: List[Double] = calculateEstimationError(result, states, models, modelStateProjectionMatrix)
 
-      validateSquareRootViterbiSmootherResult(states, models, result, 0.01, 100)
+      error.head should be <= 2400.0
+      error.last should be >= 0.99
 
     })
 
@@ -169,8 +143,10 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
       ).transpose
 
       val result = viterbiSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val error: List[Double] = calculateEstimationError(result, states, models, modelStateProjectionMatrix)
 
-      validateSquareRootViterbiSmootherResult(states, models, result, 0.1, 100)
+      error.head should be <= 3700.0
+      error.last should be >= 0.90
 
     })
 
