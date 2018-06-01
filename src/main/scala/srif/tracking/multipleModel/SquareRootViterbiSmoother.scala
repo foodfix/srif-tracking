@@ -38,7 +38,7 @@ class SquareRootViterbiSmoother extends LazyLogging {
 
     val lastSmoothedState: (FactoredGaussianDistribution, Int, Double) = {
       val lastSmoothedModelIdx: Int = argmax(forwardResult.last.updatedLogLikelihoodPerFilter)
-      (forwardResult.last.updatedEstimatePerFilter(lastSmoothedModelIdx),
+      (forwardResult.last.filterResultPerFilter(lastSmoothedModelIdx).updatedStateEstimation,
         lastSmoothedModelIdx,
         1.0)
     }
@@ -55,7 +55,7 @@ class SquareRootViterbiSmoother extends LazyLogging {
     val logModelLikelihoods: DenseVector[Double] = currentForwardResult.predictedLogLikelihoodPerFilter + currentBackwardResult.updatedLogLikelihoodPerFilter
     val modelIdx = argmax(logModelLikelihoods)
 
-    val forwardPredictedEstimates: FactoredGaussianDistribution = currentForwardResult.predictedEstimatePerFilter(modelIdx)
+    val forwardPredictedEstimates: FactoredGaussianDistribution = currentForwardResult.filterResultPerFilter(modelIdx).predictedStateEstimation
     val backwardUpdatedEstimates: FactoredGaussianDistribution = currentBackwardResult.updatedEstimatePerFilter(modelIdx)
 
     val mRow0: DenseMatrix[Double] = DenseMatrix.horzcat(forwardPredictedEstimates.R, forwardPredictedEstimates.zeta.toDenseMatrix.t)

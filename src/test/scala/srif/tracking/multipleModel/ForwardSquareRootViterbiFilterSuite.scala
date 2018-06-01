@@ -22,7 +22,7 @@ import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
 import srif.tracking.example.miscTools.MultipleModel.calculateEstimationError
 import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
 import srif.tracking.multipleModel.ForwardSquareRootViterbiFilter._
-import srif.tracking.squarerootkalman.SquareRootInformationFilter
+import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootInformationSmoother}
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
 import scala.util.Random
@@ -47,6 +47,8 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
     (DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)), DenseMatrix.eye[Double](model_1.stateDim)))
 
   val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
+  val smoothers: List[SquareRootInformationSmoother] = List(new SquareRootInformationSmoother(model_0, false), new SquareRootInformationSmoother(model_1, false))
+
   val forwardViterbiFilter = new ForwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, false, false)
 
   "ForwardSquareRootViterbiFilter" should "detect stationary object" in {
@@ -75,7 +77,12 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
 
       val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      val mapResult = mapEstResult(result)
+      val mapResult = mapEstResult(result,
+        squareRootProcessNoiseCovariancePerFilterLst,
+        stateTransitionMatrixPerFilterLst,
+        modelStateProjectionMatrix,
+        smoothers)
+
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
 
       error.head should be <= 160.0
@@ -110,7 +117,12 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
 
       val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      val mapResult = mapEstResult(result)
+      val mapResult = mapEstResult(result,
+        squareRootProcessNoiseCovariancePerFilterLst,
+        stateTransitionMatrixPerFilterLst,
+        modelStateProjectionMatrix,
+        smoothers)
+
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
 
       error.head should be <= 7800.0
@@ -145,7 +157,12 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
 
       val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      val mapResult = mapEstResult(result)
+      val mapResult = mapEstResult(result,
+        squareRootProcessNoiseCovariancePerFilterLst,
+        stateTransitionMatrixPerFilterLst,
+        modelStateProjectionMatrix,
+        smoothers)
+
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
 
       error.head should be <= 5600.0
