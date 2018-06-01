@@ -67,7 +67,7 @@ class SquareRootInformationSmoother(targetModel: TargetModel,
     * One iteration of filter step.
     * Please refer to X.2.7
     *
-    * @param filterResult                     [[FilterResult]] of next time stamp
+    * @param filterResult                     [[SquareRootInformationFilter.FilterResult]] of next time stamp
     * @param squareRootProcessNoiseCovariance process noise in next time stamp
     * @param stateTransitionMatrix            state transit matrix in next time stamp
     * @return

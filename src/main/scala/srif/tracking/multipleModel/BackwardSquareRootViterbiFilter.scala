@@ -86,7 +86,7 @@ class BackwardSquareRootViterbiFilter(backwardFilters: List[BackwardSquareRootIn
     * @param observation                               observation :math:`z_k`
     * @param squareRootProcessNoiseCovariancePerFilter [[TargetModel.calculateSquareRootProcessNoiseCovariance]] for each filter at time k
     * @param stateTransitionMatrixPerFilter            [[TargetModel.calculateStateTransitionMatrix]] for each filter at time k
-    * @param invStateTransitionMatrixPerFilter         [[TargetModel.calculateInvStateTransitionMatrix()]] for each filter at time k
+    * @param invStateTransitionMatrixPerFilter         [[TargetModel.calculateInvStateTransitionMatrix]] for each filter at time k
     * @return
     */
   def filterStep(logModelTransitionMatrix: DenseMatrix[Double],
