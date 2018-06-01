@@ -85,7 +85,7 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
 
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
 
-      error.head should be <= 160.0
+      error.head should be <= 60.0
       error.last should be >= 0.99
 
     })
@@ -125,7 +125,7 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
 
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
 
-      error.head should be <= 7800.0
+      error.head should be <= 2400.0
       error.last should be >= 0.99
 
     })
@@ -165,7 +165,7 @@ class ForwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
 
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
 
-      error.head should be <= 5600.0
+      error.head should be <= 3600.0
       error.last should be >= 0.95
 
     })
