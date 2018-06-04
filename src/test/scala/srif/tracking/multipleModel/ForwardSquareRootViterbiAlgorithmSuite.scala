@@ -77,10 +77,9 @@ class ForwardSquareRootViterbiAlgorithmSuite extends FlatSpec with Matchers {
 
       val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      val mapResult = mapEstResult(result,
+      val mapResult = forwardViterbiFilter.smooth(result,
         squareRootProcessNoiseCovariancePerFilterLst,
         stateTransitionMatrixPerFilterLst,
-        modelStateProjectionMatrix,
         smoothers)
 
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
@@ -117,10 +116,9 @@ class ForwardSquareRootViterbiAlgorithmSuite extends FlatSpec with Matchers {
 
       val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      val mapResult = mapEstResult(result,
+      val mapResult = forwardViterbiFilter.smooth(result,
         squareRootProcessNoiseCovariancePerFilterLst,
         stateTransitionMatrixPerFilterLst,
-        modelStateProjectionMatrix,
         smoothers)
 
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
@@ -157,10 +155,9 @@ class ForwardSquareRootViterbiAlgorithmSuite extends FlatSpec with Matchers {
 
       val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      val mapResult = mapEstResult(result,
+      val mapResult = forwardViterbiFilter.smooth(result,
         squareRootProcessNoiseCovariancePerFilterLst,
         stateTransitionMatrixPerFilterLst,
-        modelStateProjectionMatrix,
         smoothers)
 
       val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
