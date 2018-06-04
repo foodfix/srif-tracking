@@ -19,15 +19,15 @@ package srif.tracking.multipleModel
 import breeze.linalg.{DenseMatrix, DenseVector, argmax}
 import com.typesafe.scalalogging.LazyLogging
 import scalaz.State
-import srif.tracking.multipleModel.ForwardSquareRootViterbiFilter.{ForwardSquareRootViterbiFilterResult, ForwardSquareRootViterbiFilterState}
+import srif.tracking.multipleModel.ForwardSquareRootViterbiAlgorithm.{ForwardSquareRootViterbiFilterResult, ForwardSquareRootViterbiFilterState}
 import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
 import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootInformationSmoother}
 import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 
-class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
-                                     modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-                                     switchAfterPrediction: Boolean = false,
-                                     isDebugEnabled: Boolean = false) extends LazyLogging {
+class ForwardSquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
+                                        modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
+                                        switchAfterPrediction: Boolean = false,
+                                        isDebugEnabled: Boolean = false) extends LazyLogging {
 
   val numOfFilters: Int = filters.length
 
@@ -147,7 +147,7 @@ class ForwardSquareRootViterbiFilter(filters: List[SquareRootInformationFilter],
 
 }
 
-object ForwardSquareRootViterbiFilter {
+object ForwardSquareRootViterbiAlgorithm {
 
   def mapEstResult(estimationResults: List[ForwardSquareRootViterbiFilterResult],
                    squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]],

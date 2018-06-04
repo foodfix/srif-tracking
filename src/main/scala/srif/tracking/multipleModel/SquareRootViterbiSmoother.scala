@@ -20,7 +20,7 @@ import breeze.linalg.{DenseMatrix, DenseVector, argmax, qr}
 import com.typesafe.scalalogging.LazyLogging
 import srif.tracking.FactoredGaussianDistribution
 import srif.tracking.multipleModel.BackwardSquareRootViterbiFilter.BackwardSquareRootViterbiFilterResult
-import srif.tracking.multipleModel.ForwardSquareRootViterbiFilter.ForwardSquareRootViterbiFilterResult
+import srif.tracking.multipleModel.ForwardSquareRootViterbiAlgorithm.ForwardSquareRootViterbiFilterResult
 
 class SquareRootViterbiSmoother extends LazyLogging {
 
