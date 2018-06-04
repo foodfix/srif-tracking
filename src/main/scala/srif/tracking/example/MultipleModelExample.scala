@@ -100,9 +100,9 @@ object MultipleModelExample {
       val forwardViterbiResult = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
       val mapForwardViterbiResult: List[(FactoredGaussianDistribution, Int, Double)] = forwardViterbiFilter.
         smooth(forwardViterbiResult,
-        squareRootProcessNoiseCovariancePerFilterLst,
-        stateTransitionMatrixPerFilterLst,
-        smoothers)
+          squareRootProcessNoiseCovariancePerFilterLst,
+          stateTransitionMatrixPerFilterLst,
+          smoothers)
       outputSampleResult("ForwardViterbi", seed, observations, mapForwardViterbiResult, states, models, modelStateProjectionMatrix, 1, 0)
 
       val backwardViterbiResult = backwardViterbiFilter(backwardLogModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
