@@ -22,7 +22,7 @@ import srif.tracking.FactoredGaussianDistribution
 import srif.tracking.multipleModel.BackwardSquareRootViterbiAlgorithm.BackwardSquareRootViterbiFilterResult
 import srif.tracking.multipleModel.ForwardSquareRootViterbiAlgorithm.ForwardSquareRootViterbiFilterResult
 
-class SquareRootViterbiSmoother extends LazyLogging {
+class ForwardBackwardSquareRootViterbiSmoother extends LazyLogging {
 
   def apply(forwardResult: List[ForwardSquareRootViterbiFilterResult],
             backwardResult: List[BackwardSquareRootViterbiFilterResult]): List[(FactoredGaussianDistribution, Int, Double)] = {

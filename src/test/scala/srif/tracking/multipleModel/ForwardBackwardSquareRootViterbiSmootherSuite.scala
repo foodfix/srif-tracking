@@ -26,7 +26,7 @@ import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, Target
 
 import scala.util.Random
 
-class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
+class ForwardBackwardSquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
 
   val dim: Int = 3
   val r: Random = new scala.util.Random(0)
@@ -51,9 +51,9 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
 
   val forwardViterbiFilter = new ForwardSquareRootViterbiAlgorithm(forwardFilters, modelStateProjectionMatrix, false, false)
   val backwardViterbiFilter = new BackwardSquareRootViterbiAlgorithm(backwardFilters, modelStateProjectionMatrix, false)
-  val viterbiSmoother = new SquareRootViterbiSmoother
+  val viterbiSmoother = new ForwardBackwardSquareRootViterbiSmoother
 
-  "SquareRootViterbiSmoother" should "detect stationary object" in {
+  "ForwardBackwardSquareRootViterbiSmoother" should "detect stationary object" in {
 
     val multipleModel = new MultipleModelStructure(2, 1.0)
 

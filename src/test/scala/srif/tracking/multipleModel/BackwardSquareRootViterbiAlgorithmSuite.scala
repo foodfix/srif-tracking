@@ -50,7 +50,7 @@ class BackwardSquareRootViterbiAlgorithmSuite extends FlatSpec with Matchers {
   val backwardViterbiFilter = new BackwardSquareRootViterbiAlgorithm(filters, modelStateProjectionMatrix, false)
 
 
-  "BackwardSquareRootViterbiFilter" should "detect stationary object" in {
+  "BackwardSquareRootViterbiAlgorithm" should "detect stationary object" in {
 
     val multipleModel = new MultipleModelStructure(2, 1.0)
 

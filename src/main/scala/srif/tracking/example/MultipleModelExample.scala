@@ -63,7 +63,7 @@ object MultipleModelExample {
     val smoothers: List[SquareRootInformationSmoother] = List(new SquareRootInformationSmoother(model_0, false), new SquareRootInformationSmoother(model_1, false))
 
     val immSmoother = new SquareRootIMMSmoother(smoothers, modelStateProjectionMatrix, false)
-    val viterbiSmoother = new SquareRootViterbiSmoother
+    val viterbiSmoother = new ForwardBackwardSquareRootViterbiSmoother
 
     val multipleModel = new MultipleModelStructure(2, 1.0 - modelSwitchingProbabilityPerUnitTime)
 
