@@ -167,12 +167,14 @@ object ForwardSquareRootViterbiFilter {
         case (nextSmoothedDistribution, nextSelectModel) =>
           val currentSelectModel: Int = nextViterbiFilterResult.previousModelPerFilter.get(nextSelectModel)
 
-          val currentSmoothedDistribution: FactoredGaussianDistribution = smoothers(nextSelectModel).smoothStep(
+          val currentSmoothedDistributionNotProjected: FactoredGaussianDistribution = smoothers(nextSelectModel).smoothStep(
             nextViterbiFilterResult.filterResultPerFilter(nextSelectModel),
             squareRootProcessNoiseCovariancePerFilter(nextSelectModel),
             stateTransitionMatrixPerFilter(nextSelectModel)).eval(nextSmoothedDistribution).
-            smoothedStateEstimation.
-            multiply(modelStateProjectionMatrix(currentSelectModel, nextSelectModel))
+            smoothedStateEstimation
+
+          val currentSmoothedDistribution = if (currentSelectModel == nextSelectModel) currentSmoothedDistributionNotProjected
+          else currentSmoothedDistributionNotProjected.multiply(modelStateProjectionMatrix(currentSelectModel, nextSelectModel))
 
           ((currentSmoothedDistribution, currentSelectModel), (currentSmoothedDistribution, currentSelectModel, 1.0))
       }
