@@ -21,13 +21,13 @@ import org.scalatest.{FlatSpec, Matchers}
 import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
 import srif.tracking.example.miscTools.MultipleModel.calculateEstimationError
 import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
-import srif.tracking.multipleModel.BackwardSquareRootViterbiFilter._
+import srif.tracking.multipleModel.BackwardSquareRootViterbiAlgorithm._
 import srif.tracking.squarerootkalman.BackwardSquareRootInformationFilter
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
 import scala.util.Random
 
-class BackwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
+class BackwardSquareRootViterbiAlgorithmSuite extends FlatSpec with Matchers {
 
   val dim: Int = 3
   val r: Random = new scala.util.Random(0)
@@ -47,7 +47,7 @@ class BackwardSquareRootViterbiFilterSuite extends FlatSpec with Matchers {
     (DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)), DenseMatrix.eye[Double](model_1.stateDim)))
 
   val filters: List[BackwardSquareRootInformationFilter] = List(new BackwardSquareRootInformationFilter(model_0, false), new BackwardSquareRootInformationFilter(model_1, false))
-  val backwardViterbiFilter = new BackwardSquareRootViterbiFilter(filters, modelStateProjectionMatrix, false)
+  val backwardViterbiFilter = new BackwardSquareRootViterbiAlgorithm(filters, modelStateProjectionMatrix, false)
 
 
   "BackwardSquareRootViterbiFilter" should "detect stationary object" in {

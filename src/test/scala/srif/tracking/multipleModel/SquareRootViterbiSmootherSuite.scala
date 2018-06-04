@@ -50,7 +50,7 @@ class SquareRootViterbiSmootherSuite extends FlatSpec with Matchers {
   val backwardFilters: List[BackwardSquareRootInformationFilter] = List(new BackwardSquareRootInformationFilter(model_0, false), new BackwardSquareRootInformationFilter(model_1, false))
 
   val forwardViterbiFilter = new ForwardSquareRootViterbiAlgorithm(forwardFilters, modelStateProjectionMatrix, false, false)
-  val backwardViterbiFilter = new BackwardSquareRootViterbiFilter(backwardFilters, modelStateProjectionMatrix, false)
+  val backwardViterbiFilter = new BackwardSquareRootViterbiAlgorithm(backwardFilters, modelStateProjectionMatrix, false)
   val viterbiSmoother = new SquareRootViterbiSmoother
 
   "SquareRootViterbiSmoother" should "detect stationary object" in {
