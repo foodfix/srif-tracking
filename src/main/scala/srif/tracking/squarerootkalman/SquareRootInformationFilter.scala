@@ -42,7 +42,7 @@ class SquareRootInformationFilter(targetModel: TargetModel,
     * @param observationLst                      : a list of [[FactoredGaussianDistribution]] presents the observations
     * @param squareRootProcessNoiseCovarianceLst : refer to [[TargetModel.calculateSquareRootProcessNoiseCovariance]]
     * @param stateTransitionMatrixLst            : refer to [[TargetModel.calculateStateTransitionMatrix]]
-    * @param invStateTransitionMatrixLst         : refer to [[TargetModel.calculateInvStateTransitionMatrix()]]
+    * @param invStateTransitionMatrixLst         : refer to [[TargetModel.calculateInvStateTransitionMatrix]]
     * @return filterd results
     */
   def apply(observationLst: List[FactoredGaussianDistribution],

@@ -19,14 +19,14 @@ package srif.tracking.multipleModel
 import breeze.linalg.{DenseMatrix, DenseVector, argmax}
 import com.typesafe.scalalogging.LazyLogging
 import scalaz.State
-import srif.tracking.multipleModel.BackwardSquareRootViterbiFilter.BackwardSquareRootViterbiFilterResult
+import srif.tracking.multipleModel.BackwardSquareRootViterbiAlgorithm.BackwardSquareRootViterbiFilterResult
 import srif.tracking.squarerootkalman.BackwardSquareRootInformationFilter
 import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
 import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 
-class BackwardSquareRootViterbiFilter(backwardFilters: List[BackwardSquareRootInformationFilter],
-                                      modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-                                      isDebugEnabled: Boolean = false) extends LazyLogging {
+class BackwardSquareRootViterbiAlgorithm(backwardFilters: List[BackwardSquareRootInformationFilter],
+                                         modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
+                                         isDebugEnabled: Boolean = false) extends LazyLogging {
   val numOfFilters: Int = backwardFilters.length
 
   /**
@@ -86,7 +86,7 @@ class BackwardSquareRootViterbiFilter(backwardFilters: List[BackwardSquareRootIn
     * @param observation                               observation :math:`z_k`
     * @param squareRootProcessNoiseCovariancePerFilter [[TargetModel.calculateSquareRootProcessNoiseCovariance]] for each filter at time k
     * @param stateTransitionMatrixPerFilter            [[TargetModel.calculateStateTransitionMatrix]] for each filter at time k
-    * @param invStateTransitionMatrixPerFilter         [[TargetModel.calculateInvStateTransitionMatrix()]] for each filter at time k
+    * @param invStateTransitionMatrixPerFilter         [[TargetModel.calculateInvStateTransitionMatrix]] for each filter at time k
     * @return
     */
   def filterStep(logModelTransitionMatrix: DenseMatrix[Double],
@@ -146,7 +146,7 @@ class BackwardSquareRootViterbiFilter(backwardFilters: List[BackwardSquareRootIn
 
 }
 
-object BackwardSquareRootViterbiFilter {
+object BackwardSquareRootViterbiAlgorithm {
 
   def mapEstResult(estimationResults: List[BackwardSquareRootViterbiFilterResult]): List[(FactoredGaussianDistribution, Int, Double)] = {
 
