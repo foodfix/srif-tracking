@@ -25,6 +25,7 @@ import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootIn
 import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 
 class ForwardSquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
+                                        smoothers: List[SquareRootInformationSmoother],
                                         modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
                                         isDebugEnabled: Boolean = false) extends LazyLogging {
 
@@ -144,10 +145,37 @@ class ForwardSquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilte
       }
     }
 
+  def smoothStep(viterbiFilterResult: ForwardSquareRootViterbiFilterResult,
+                 squareRootProcessNoiseCovariancePerFilter: List[DenseMatrix[Double]],
+                 stateTransitionMatrixPerFilter: List[DenseMatrix[Double]]):
+  State[(FactoredGaussianDistribution, Int), (FactoredGaussianDistribution, Int, Double)] =
+    State[(FactoredGaussianDistribution, Int), (FactoredGaussianDistribution, Int, Double)] {
+      case (nextSmoothedDistribution, nextSelectModel) =>
+        val currentSelectModel: Int = viterbiFilterResult.previousModelPerFilter.get(nextSelectModel)
+
+        val currentSmoothedDistributionNotProjected: FactoredGaussianDistribution = smoothers(nextSelectModel).smoothStep(
+          viterbiFilterResult.filterResultPerFilter(nextSelectModel),
+          squareRootProcessNoiseCovariancePerFilter(nextSelectModel),
+          stateTransitionMatrixPerFilter(nextSelectModel)).eval(nextSmoothedDistribution).
+          smoothedStateEstimation
+
+        val currentSmoothedDistribution = if (currentSelectModel == nextSelectModel) currentSmoothedDistributionNotProjected
+        else currentSmoothedDistributionNotProjected.multiply(modelStateProjectionMatrix(currentSelectModel, nextSelectModel))
+
+        ((currentSmoothedDistribution, currentSelectModel), (currentSmoothedDistribution, currentSelectModel, 1.0))
+    }
+
+  /**
+    * Perform viterbi smoothing.
+    *
+    * @param filterResults
+    * @param squareRootProcessNoiseCovariancePerFilterLst
+    * @param stateTransitionMatrixPerFilterLst
+    * @return
+    */
   def smooth(filterResults: List[ForwardSquareRootViterbiFilterResult],
              squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]],
-             stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]],
-             smoothers: List[SquareRootInformationSmoother]): List[(FactoredGaussianDistribution, Int, Double)] = {
+             stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[(FactoredGaussianDistribution, Int, Double)] = {
 
     val lastEstimatedModel: Int = argmax(filterResults.last.updatedLogLikelihoodPerFilter)
     val numberOfEvents: Int = filterResults.length
@@ -157,21 +185,8 @@ class ForwardSquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilte
       val squareRootProcessNoiseCovariancePerFilter: List[DenseMatrix[Double]] = squareRootProcessNoiseCovariancePerFilterLst(idx + 1)
       val stateTransitionMatrixPerFilter: List[DenseMatrix[Double]] = stateTransitionMatrixPerFilterLst(idx + 1)
 
-      State[(FactoredGaussianDistribution, Int), (FactoredGaussianDistribution, Int, Double)] {
-        case (nextSmoothedDistribution, nextSelectModel) =>
-          val currentSelectModel: Int = nextViterbiFilterResult.previousModelPerFilter.get(nextSelectModel)
+      smoothStep(nextViterbiFilterResult, squareRootProcessNoiseCovariancePerFilter, stateTransitionMatrixPerFilter)
 
-          val currentSmoothedDistributionNotProjected: FactoredGaussianDistribution = smoothers(nextSelectModel).smoothStep(
-            nextViterbiFilterResult.filterResultPerFilter(nextSelectModel),
-            squareRootProcessNoiseCovariancePerFilter(nextSelectModel),
-            stateTransitionMatrixPerFilter(nextSelectModel)).eval(nextSmoothedDistribution).
-            smoothedStateEstimation
-
-          val currentSmoothedDistribution = if (currentSelectModel == nextSelectModel) currentSmoothedDistributionNotProjected
-          else currentSmoothedDistributionNotProjected.multiply(modelStateProjectionMatrix(currentSelectModel, nextSelectModel))
-
-          ((currentSmoothedDistribution, currentSelectModel), (currentSmoothedDistribution, currentSelectModel, 1.0))
-      }
     })).eval(
       filterResults.last.filterResultPerFilter(lastEstimatedModel).updatedStateEstimation,
       lastEstimatedModel

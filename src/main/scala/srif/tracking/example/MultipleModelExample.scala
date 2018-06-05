@@ -53,13 +53,13 @@ object MultipleModelExample {
       (DenseMatrix.eye[Double](model_0.stateDim), DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)).t),
       (DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)), DenseMatrix.eye[Double](model_1.stateDim)))
 
-    val forwardFilters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
-
-    val immFilter = new SquareRootIMMFilter(forwardFilters, modelStateProjectionMatrix, false)
-    val forwardViterbiFilter = new ForwardSquareRootViterbiAlgorithm(forwardFilters, modelStateProjectionMatrix)
-
+    val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
     val smoothers: List[SquareRootInformationSmoother] = List(new SquareRootInformationSmoother(model_0, false), new SquareRootInformationSmoother(model_1, false))
 
+
+    val immFilter = new SquareRootIMMFilter(filters, modelStateProjectionMatrix, false)
+
+    val viterbiAlg = new ForwardSquareRootViterbiAlgorithm(filters, smoothers, modelStateProjectionMatrix)
     val immSmoother = new SquareRootIMMSmoother(smoothers, modelStateProjectionMatrix, false)
 
     val multipleModel = new MultipleModelStructure(2, 1.0 - modelSwitchingProbabilityPerUnitTime)
@@ -75,13 +75,13 @@ object MultipleModelExample {
         val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
         GaussianDistribution(x, covarianceMatrix).toFactoredGaussianDistribution
       })
-      val squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]] = forwardFilters.map(
+      val squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]] = filters.map(
         f => stepSizeLst.map(f.getTargetModel.calculateSquareRootProcessNoiseCovariance)
       ).transpose
-      val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = forwardFilters.map(
+      val stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = filters.map(
         f => stepSizeLst.map(f.getTargetModel.calculateStateTransitionMatrix)
       ).transpose
-      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = forwardFilters.map(
+      val invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]] = filters.map(
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
@@ -93,12 +93,11 @@ object MultipleModelExample {
       val fusedIMMSmootherResult: List[(FactoredGaussianDistribution, Int, Double)] = SquareRootIMMSmoother.fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
       outputSampleResult("IMMSmoother", seed, observations, fusedIMMSmootherResult, states, models, modelStateProjectionMatrix, 0, 0)
 
-      val forwardViterbiResult = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
-      val mapForwardViterbiResult: List[(FactoredGaussianDistribution, Int, Double)] = forwardViterbiFilter.
-        smooth(forwardViterbiResult,
+      val viterbiResult = viterbiAlg(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val mapForwardViterbiResult: List[(FactoredGaussianDistribution, Int, Double)] = viterbiAlg.
+        smooth(viterbiResult,
           squareRootProcessNoiseCovariancePerFilterLst,
-          stateTransitionMatrixPerFilterLst,
-          smoothers)
+          stateTransitionMatrixPerFilterLst)
       outputSampleResult("ForwardViterbi", seed, observations, mapForwardViterbiResult, states, models, modelStateProjectionMatrix, 1, 0)
 
     })

@@ -48,7 +48,7 @@ class ForwardSquareRootViterbiAlgorithmSuite extends FlatSpec with Matchers {
   val filters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
   val smoothers: List[SquareRootInformationSmoother] = List(new SquareRootInformationSmoother(model_0, false), new SquareRootInformationSmoother(model_1, false))
 
-  val forwardViterbiFilter = new ForwardSquareRootViterbiAlgorithm(filters, modelStateProjectionMatrix, false)
+  val viterbiAlg = new ForwardSquareRootViterbiAlgorithm(filters, smoothers, modelStateProjectionMatrix, false)
 
   "ForwardSquareRootViterbiAlgorithm" should "detect stationary object" in {
 
@@ -74,14 +74,13 @@ class ForwardSquareRootViterbiAlgorithmSuite extends FlatSpec with Matchers {
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val result = viterbiAlg(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      val mapResult = forwardViterbiFilter.smooth(result,
+      val smoothResult = viterbiAlg.smooth(result,
         squareRootProcessNoiseCovariancePerFilterLst,
-        stateTransitionMatrixPerFilterLst,
-        smoothers)
+        stateTransitionMatrixPerFilterLst)
 
-      val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
+      val error: List[Double] = calculateEstimationError(smoothResult, states, models, modelStateProjectionMatrix, 1)
 
       error.head should be <= 60.0
       error.last should be >= 0.99
@@ -113,14 +112,13 @@ class ForwardSquareRootViterbiAlgorithmSuite extends FlatSpec with Matchers {
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val result = viterbiAlg(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      val mapResult = forwardViterbiFilter.smooth(result,
+      val smoothResult = viterbiAlg.smooth(result,
         squareRootProcessNoiseCovariancePerFilterLst,
-        stateTransitionMatrixPerFilterLst,
-        smoothers)
+        stateTransitionMatrixPerFilterLst)
 
-      val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
+      val error: List[Double] = calculateEstimationError(smoothResult, states, models, modelStateProjectionMatrix, 1)
 
       error.head should be <= 2400.0
       error.last should be >= 0.99
@@ -152,14 +150,13 @@ class ForwardSquareRootViterbiAlgorithmSuite extends FlatSpec with Matchers {
         f => stepSizeLst.map(f.getTargetModel.calculateInvStateTransitionMatrix)
       ).transpose
 
-      val result = forwardViterbiFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
+      val result = viterbiAlg(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
 
-      val mapResult = forwardViterbiFilter.smooth(result,
+      val smoothResult = viterbiAlg.smooth(result,
         squareRootProcessNoiseCovariancePerFilterLst,
-        stateTransitionMatrixPerFilterLst,
-        smoothers)
+        stateTransitionMatrixPerFilterLst)
 
-      val error: List[Double] = calculateEstimationError(mapResult, states, models, modelStateProjectionMatrix, 1)
+      val error: List[Double] = calculateEstimationError(smoothResult, states, models, modelStateProjectionMatrix, 1)
 
       error.head should be <= 3600.0
       error.last should be >= 0.95
