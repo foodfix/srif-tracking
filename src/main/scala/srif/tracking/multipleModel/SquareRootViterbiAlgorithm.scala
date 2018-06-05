@@ -19,15 +19,15 @@ package srif.tracking.multipleModel
 import breeze.linalg.{DenseMatrix, DenseVector, argmax}
 import com.typesafe.scalalogging.LazyLogging
 import scalaz.State
-import srif.tracking.multipleModel.ForwardSquareRootViterbiAlgorithm.{ForwardSquareRootViterbiFilterResult, ForwardSquareRootViterbiFilterState}
+import srif.tracking.multipleModel.SquareRootViterbiAlgorithm.{ForwardSquareRootViterbiFilterResult, ForwardSquareRootViterbiFilterState}
 import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
 import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootInformationSmoother}
 import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 
-class ForwardSquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
-                                        smoothers: List[SquareRootInformationSmoother],
-                                        modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-                                        isDebugEnabled: Boolean = false) extends LazyLogging {
+class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
+                                 smoothers: List[SquareRootInformationSmoother],
+                                 modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
+                                 isDebugEnabled: Boolean = false) extends LazyLogging {
 
   val numOfFilters: Int = filters.length
 
@@ -148,9 +148,9 @@ class ForwardSquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilte
   /**
     * Perform viterbi smoothing.
     *
-    * @param filterResults                                filter result for each timestamp, return of [[ForwardSquareRootViterbiAlgorithm.apply]]
-    * @param squareRootProcessNoiseCovariancePerFilterLst refer to [[ForwardSquareRootViterbiAlgorithm.apply]]
-    * @param stateTransitionMatrixPerFilterLst            refer to [[ForwardSquareRootViterbiAlgorithm.apply]]
+    * @param filterResults                                filter result for each timestamp, return of [[SquareRootViterbiAlgorithm.apply]]
+    * @param squareRootProcessNoiseCovariancePerFilterLst refer to [[SquareRootViterbiAlgorithm.apply]]
+    * @param stateTransitionMatrixPerFilterLst            refer to [[SquareRootViterbiAlgorithm.apply]]
     * @return smooth result for each timestamp
     */
   def smooth(filterResults: List[ForwardSquareRootViterbiFilterResult],
@@ -206,7 +206,7 @@ class ForwardSquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilte
 
 }
 
-object ForwardSquareRootViterbiAlgorithm {
+object SquareRootViterbiAlgorithm {
 
   case class ForwardSquareRootViterbiFilterResult(predictedLogLikelihoodPerFilter: DenseVector[Double],
                                                   updatedLogLikelihoodPerFilter: DenseVector[Double],
