@@ -69,7 +69,7 @@ class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
     val initialLogLikelihoodPerFilter: DenseVector[Double] = DenseVector.fill[Double](numOfFilters, 0)
     val initialFilterResultLst: List[FactoredGaussianDistribution] = filters.map(f => FactoredGaussianDistribution(DenseVector.zeros(f.dim), DenseMatrix.zeros(f.dim, f.dim)))
 
-    val initialViterbiFilterState = ForwardSquareRootViterbiFilterState(initialLogLikelihoodPerFilter, initialLogLikelihoodPerFilter, initialFilterResultLst, initialFilterResultLst, None)
+    val initialViterbiFilterState = ForwardSquareRootViterbiFilterState(initialLogLikelihoodPerFilter, initialFilterResultLst)
 
     sequence(List.range(0, numOfTimeSteps).map(idx =>
       (logModelTransitionMatrixLst(idx),
@@ -134,7 +134,6 @@ class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
         }).transpose match {
           case (filterResultPerFilter: List[FilterResult]) :: (predictedLogLikelihoodPerFilter: List[Double]) :: (updatedLogLikelihoodPerFilter: List[Double]) :: (previousModelPerFilter: List[Int]) :: Nil =>
             val currentViterbiFilterResult = ForwardSquareRootViterbiFilterResult(
-              DenseVector(predictedLogLikelihoodPerFilter: _*),
               DenseVector(updatedLogLikelihoodPerFilter: _*),
               filterResultPerFilter,
               Some(previousModelPerFilter)
@@ -208,23 +207,16 @@ class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
 
 object SquareRootViterbiAlgorithm {
 
-  case class ForwardSquareRootViterbiFilterResult(predictedLogLikelihoodPerFilter: DenseVector[Double],
-                                                  updatedLogLikelihoodPerFilter: DenseVector[Double],
+  case class ForwardSquareRootViterbiFilterResult(updatedLogLikelihoodPerFilter: DenseVector[Double],
                                                   filterResultPerFilter: List[FilterResult],
                                                   previousModelPerFilter: Option[List[Int]]) {
     def toState: ForwardSquareRootViterbiFilterState = ForwardSquareRootViterbiFilterState(
-      predictedLogLikelihoodPerFilter,
       updatedLogLikelihoodPerFilter,
-      filterResultPerFilter.map(_.predictedStateEstimation),
-      filterResultPerFilter.map(_.updatedStateEstimation),
-      previousModelPerFilter
+      filterResultPerFilter.map(_.updatedStateEstimation)
     )
   }
 
-  case class ForwardSquareRootViterbiFilterState(predictedLogLikelihoodPerFilter: DenseVector[Double],
-                                                 updatedLogLikelihoodPerFilter: DenseVector[Double],
-                                                 predictedEstimatePerFilter: List[FactoredGaussianDistribution],
-                                                 updatedEstimatePerFilter: List[FactoredGaussianDistribution],
-                                                 previousModelPerFilter: Option[List[Int]])
+  case class ForwardSquareRootViterbiFilterState(updatedLogLikelihoodPerFilter: DenseVector[Double],
+                                                 updatedEstimatePerFilter: List[FactoredGaussianDistribution])
 
 }
