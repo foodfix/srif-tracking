@@ -59,7 +59,7 @@ object MultipleModelExample {
 
     val immFilter = new SquareRootIMMFilter(filters, modelStateProjectionMatrix, false)
 
-    val viterbiAlg = new ForwardSquareRootViterbiAlgorithm(filters, smoothers, modelStateProjectionMatrix)
+    val viterbiAlg = new SquareRootViterbiAlgorithm(filters, smoothers, modelStateProjectionMatrix)
     val immSmoother = new SquareRootIMMSmoother(smoothers, modelStateProjectionMatrix, false)
 
     val multipleModel = new MultipleModelStructure(2, 1.0 - modelSwitchingProbabilityPerUnitTime)
