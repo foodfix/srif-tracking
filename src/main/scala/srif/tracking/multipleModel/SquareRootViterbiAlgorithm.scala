@@ -19,7 +19,7 @@ package srif.tracking.multipleModel
 import breeze.linalg.{DenseMatrix, DenseVector, argmax}
 import com.typesafe.scalalogging.LazyLogging
 import scalaz.State
-import srif.tracking.multipleModel.SquareRootViterbiAlgorithm.{SquareRootViterbiFilterResult, ForwardSquareRootViterbiFilterState}
+import srif.tracking.multipleModel.SquareRootViterbiAlgorithm.{SquareRootViterbiFilterResult, SquareRootViterbiFilterState}
 import srif.tracking.squarerootkalman.SquareRootInformationFilter.FilterResult
 import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootInformationSmoother}
 import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
@@ -69,7 +69,7 @@ class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
     val initialLogLikelihoodPerFilter: DenseVector[Double] = DenseVector.fill[Double](numOfFilters, 0)
     val initialFilterResultLst: List[FactoredGaussianDistribution] = filters.map(f => FactoredGaussianDistribution(DenseVector.zeros(f.dim), DenseMatrix.zeros(f.dim, f.dim)))
 
-    val initialViterbiFilterState = ForwardSquareRootViterbiFilterState(initialLogLikelihoodPerFilter, initialFilterResultLst)
+    val initialViterbiFilterState = SquareRootViterbiFilterState(initialLogLikelihoodPerFilter, initialFilterResultLst)
 
     sequence(List.range(0, numOfTimeSteps).map(idx =>
       (logModelTransitionMatrixLst(idx),
@@ -96,8 +96,8 @@ class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
                  observation: FactoredGaussianDistribution,
                  squareRootProcessNoiseCovariancePerFilter: List[DenseMatrix[Double]],
                  stateTransitionMatrixPerFilter: List[DenseMatrix[Double]],
-                 invStateTransitionMatrixPerFilter: List[DenseMatrix[Double]]): State[ForwardSquareRootViterbiFilterState, SquareRootViterbiFilterResult] =
-    State[ForwardSquareRootViterbiFilterState, SquareRootViterbiFilterResult] {
+                 invStateTransitionMatrixPerFilter: List[DenseMatrix[Double]]): State[SquareRootViterbiFilterState, SquareRootViterbiFilterResult] =
+    State[SquareRootViterbiFilterState, SquareRootViterbiFilterResult] {
       previousForwardViterbiFilterState => {
 
         List.range(0, numOfFilters).map(currentFilterIdx => {
@@ -210,13 +210,13 @@ object SquareRootViterbiAlgorithm {
   case class SquareRootViterbiFilterResult(updatedLogLikelihoodPerFilter: DenseVector[Double],
                                            filterResultPerFilter: List[FilterResult],
                                            previousModelPerFilter: Option[List[Int]]) {
-    def toState: ForwardSquareRootViterbiFilterState = ForwardSquareRootViterbiFilterState(
+    def toState: SquareRootViterbiFilterState = SquareRootViterbiFilterState(
       updatedLogLikelihoodPerFilter,
       filterResultPerFilter.map(_.updatedStateEstimation)
     )
   }
 
-  case class ForwardSquareRootViterbiFilterState(updatedLogLikelihoodPerFilter: DenseVector[Double],
-                                                 updatedEstimatePerFilter: List[FactoredGaussianDistribution])
+  case class SquareRootViterbiFilterState(updatedLogLikelihoodPerFilter: DenseVector[Double],
+                                          updatedEstimatePerFilter: List[FactoredGaussianDistribution])
 
 }
