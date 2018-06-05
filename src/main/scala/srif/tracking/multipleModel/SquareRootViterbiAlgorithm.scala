@@ -45,7 +45,8 @@ class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
             observationLst: List[FactoredGaussianDistribution],
             squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]],
             stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]],
-            invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[SquareRootViterbiFilterResult] = {
+            invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]],
+            initialState: Option[SquareRootViterbiFilterState] = None): List[SquareRootViterbiFilterResult] = {
 
     val numOfTimeSteps: Int = observationLst.length
 
@@ -66,10 +67,11 @@ class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
       require(modelStateProjectionMatrix(i, j).cols == filters(j).getTargetModel.stateDim)
     }
 
-    val initialLogLikelihoodPerFilter: DenseVector[Double] = DenseVector.fill[Double](numOfFilters, 0)
-    val initialFilterResultLst: List[FactoredGaussianDistribution] = filters.map(f => FactoredGaussianDistribution(DenseVector.zeros(f.dim), DenseMatrix.zeros(f.dim, f.dim)))
-
-    val initialViterbiFilterState = SquareRootViterbiFilterState(initialLogLikelihoodPerFilter, initialFilterResultLst)
+    val initialViterbiFilterState = initialState.getOrElse({
+      val initialLogLikelihoodPerFilter: DenseVector[Double] = DenseVector.fill[Double](numOfFilters, 0)
+      val initialFilterResultLst: List[FactoredGaussianDistribution] = filters.map(f => FactoredGaussianDistribution(DenseVector.zeros(f.dim), DenseMatrix.zeros(f.dim, f.dim)))
+      SquareRootViterbiFilterState(initialLogLikelihoodPerFilter, initialFilterResultLst)
+    })
 
     sequence(List.range(0, numOfTimeSteps).map(idx =>
       (logModelTransitionMatrixLst(idx),
