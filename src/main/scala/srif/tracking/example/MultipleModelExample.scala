@@ -23,7 +23,7 @@ import srif.tracking.TargetModel.{ConstantPositionModel, ConstantVelocityModel}
 import srif.tracking.example.miscTools.MultipleModel.calculateEstimationError
 import srif.tracking.example.sampleDataGeneration.MultipleModelTestDataGenerator
 import srif.tracking.multipleModel._
-import srif.tracking.squarerootkalman.{BackwardSquareRootInformationFilter, SquareRootInformationFilter, SquareRootInformationSmoother}
+import srif.tracking.squarerootkalman.{SquareRootInformationFilter, SquareRootInformationSmoother}
 import srif.tracking.{FactoredGaussianDistribution, GaussianDistribution, TargetModel}
 
 object MultipleModelExample {
@@ -54,16 +54,13 @@ object MultipleModelExample {
       (DenseMatrix((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0)), DenseMatrix.eye[Double](model_1.stateDim)))
 
     val forwardFilters: List[SquareRootInformationFilter] = List(new SquareRootInformationFilter(model_0, false), new SquareRootInformationFilter(model_1, false))
-    val backwardFilters: List[BackwardSquareRootInformationFilter] = List(new BackwardSquareRootInformationFilter(model_0, false), new BackwardSquareRootInformationFilter(model_1, false))
 
     val immFilter = new SquareRootIMMFilter(forwardFilters, modelStateProjectionMatrix, false)
-    val forwardViterbiFilter = new ForwardSquareRootViterbiAlgorithm(forwardFilters, modelStateProjectionMatrix, false, false)
-    val backwardViterbiFilter = new BackwardSquareRootViterbiAlgorithm(backwardFilters, modelStateProjectionMatrix, false)
+    val forwardViterbiFilter = new ForwardSquareRootViterbiAlgorithm(forwardFilters, modelStateProjectionMatrix)
 
     val smoothers: List[SquareRootInformationSmoother] = List(new SquareRootInformationSmoother(model_0, false), new SquareRootInformationSmoother(model_1, false))
 
     val immSmoother = new SquareRootIMMSmoother(smoothers, modelStateProjectionMatrix, false)
-    val viterbiSmoother = new ForwardBackwardSquareRootViterbiSmoother
 
     val multipleModel = new MultipleModelStructure(2, 1.0 - modelSwitchingProbabilityPerUnitTime)
 
@@ -73,7 +70,6 @@ object MultipleModelExample {
         MultipleModelTestDataGenerator(targetModelLst, 1, initialStateLst, numOfEventsPerTestCase, multipleModel, observationStd, modelStateProjectionMatrix, seed)
 
       val logModelTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(multipleModel.getLogModelTransitionMatrix)
-      val backwardLogModelTransitionMatrixLst: List[DenseMatrix[Double]] = logModelTransitionMatrixLst.tail ::: List(logModelTransitionMatrixLst.head)
 
       val observationLst: List[FactoredGaussianDistribution] = observations.map(x => {
         val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
@@ -105,13 +101,6 @@ object MultipleModelExample {
           smoothers)
       outputSampleResult("ForwardViterbi", seed, observations, mapForwardViterbiResult, states, models, modelStateProjectionMatrix, 1, 0)
 
-      val backwardViterbiResult = backwardViterbiFilter(backwardLogModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
-      val mapBackwardViterbiResult: List[(FactoredGaussianDistribution, Int, Double)] = BackwardSquareRootViterbiAlgorithm.mapEstResult(backwardViterbiResult)
-      outputSampleResult("BackwardViterbi", seed, observations, mapBackwardViterbiResult, states, models, modelStateProjectionMatrix, 0, 1)
-
-      val viterbiSmootherResult: List[(FactoredGaussianDistribution, Int, Double)] = viterbiSmoother(forwardViterbiResult, backwardViterbiResult)
-      outputSampleResult("ViterbiSmoother", seed, observations, viterbiSmootherResult, states, models, modelStateProjectionMatrix, 0, 0)
-
     })
 
   }
@@ -122,7 +111,7 @@ object MultipleModelExample {
                          estimatedResult: List[(FactoredGaussianDistribution, Int, Double)],
                          trueStates: List[DenseVector[Double]], trueModels: List[Int],
                          modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-                         dropLeft: Int, dropRight: Int) = {
+                         dropLeft: Int, dropRight: Int): Unit = {
 
     val error = calculateEstimationError(estimatedResult, trueStates, trueModels, modelStateProjectionMatrix, dropLeft, dropRight)
     println(s"$estimatorName, \tState MSE: ${error.head}, \tModel Mean Error: ${error.last}.")

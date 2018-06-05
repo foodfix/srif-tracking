@@ -26,7 +26,6 @@ import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 
 class ForwardSquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
                                         modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-                                        switchAfterPrediction: Boolean = false,
                                         isDebugEnabled: Boolean = false) extends LazyLogging {
 
   val numOfFilters: Int = filters.length
@@ -124,7 +123,7 @@ class ForwardSquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilte
 
           val updatedLogLikelihoodPerFilter: DenseVector[Double] = predictedLogLikelihoodPerFilter + DenseVector(filterResultBeforeSwitching.map(_.observationLogLikelihood): _*)
 
-          val selectedModelIdx: Int = if (switchAfterPrediction) argmax(predictedLogLikelihoodPerFilter) else argmax(updatedLogLikelihoodPerFilter)
+          val selectedModelIdx: Int = argmax(updatedLogLikelihoodPerFilter)
 
           List(filterResultBeforeSwitching(selectedModelIdx),
             predictedLogLikelihoodPerFilter(selectedModelIdx),
