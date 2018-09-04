@@ -30,11 +30,11 @@ import srif.tracking.squarerootkalman.SquareRootInformationSmoother.SmoothResult
 /**
   * Square Root IMM smoother
   *
-  * @param smoothers                  list of smoothers.
+  * @param smoothers                  vector of smoothers.
   * @param modelStateProjectionMatrix used to project the state of one model to another model
   * @param isDebugEnabled             true if show debug message
   */
-class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]], isDebugEnabled: Boolean = false) extends LazyLogging {
+class SquareRootIMMSmoother(smoothers: Vector[SquareRootInformationSmoother], modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]], isDebugEnabled: Boolean = false) extends LazyLogging {
 
   lazy val immFilter: SquareRootIMMFilter = new SquareRootIMMFilter(smoothers.map(_.filter), modelStateProjectionMatrix, isDebugEnabled)
   val numOfSmoothers: Int = smoothers.length
@@ -49,20 +49,20 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
     * @param invStateTransitionMatrixPerFilterLst           inverse of state transition matrix for each timestamp
     * @return smooth result for each timestamp
     */
-  def apply(logModelTransitionMatrixLst: List[DenseMatrix[Double]],
-            observationLst: List[FactoredGaussianDistribution],
-            squareRootProcessNoiseCovariancePerSmootherLst: List[List[DenseMatrix[Double]]],
-            stateTransitionMatrixPerSmootherLst: List[List[DenseMatrix[Double]]],
-            invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[IMMSmootherResult] = {
+  def apply(logModelTransitionMatrixLst: Vector[DenseMatrix[Double]],
+            observationLst: Vector[FactoredGaussianDistribution],
+            squareRootProcessNoiseCovariancePerSmootherLst: Vector[Vector[DenseMatrix[Double]]],
+            stateTransitionMatrixPerSmootherLst: Vector[Vector[DenseMatrix[Double]]],
+            invStateTransitionMatrixPerFilterLst: Vector[Vector[DenseMatrix[Double]]]): Vector[IMMSmootherResult] = {
 
     val numOfTimeSteps: Int = observationLst.length
 
-    val immFilterResult: List[IMMFilterResult] = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerSmootherLst, stateTransitionMatrixPerSmootherLst, invStateTransitionMatrixPerFilterLst)
+    val immFilterResult: Vector[IMMFilterResult] = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerSmootherLst, stateTransitionMatrixPerSmootherLst, invStateTransitionMatrixPerFilterLst)
     val updatedLogModeProbabilityLst = immFilterResult.map(_.updatedLogModeProbability)
 
-    val initialSmoothResultPerSmoother: List[SmoothResult] = immFilterResult.last.updateResultPerFilter.map(x => SmoothResult(x.updatedStateEstimation, x.observationLogLikelihood))
+    val initialSmoothResultPerSmoother: Vector[SmoothResult] = immFilterResult.last.updateResultPerFilter.map(x => SmoothResult(x.updatedStateEstimation, x.observationLogLikelihood))
 
-    val immSmootherResult: List[IMMSmootherResult] = sequence(List.range(1, numOfTimeSteps).map(idx => {
+    val immSmootherResult: Vector[IMMSmootherResult] = sequence(Vector.range(1, numOfTimeSteps).map(idx => {
       (immFilterResult(idx),
         squareRootProcessNoiseCovariancePerSmootherLst(idx),
         stateTransitionMatrixPerSmootherLst(idx),
@@ -70,7 +70,7 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
         logModelTransitionMatrixLst(idx))
     }).reverse.map(p => smoothStep(p._1, p._2, p._3, p._4, p._5))).
       eval(IMMSmootherState(immFilterResult.last.updatedLogModeProbability, initialSmoothResultPerSmoother)).
-      reverse ::: List(IMMSmootherResult(immFilterResult.last.updatedLogModeProbability, initialSmoothResultPerSmoother))
+      reverse :+ IMMSmootherResult(immFilterResult.last.updatedLogModeProbability, initialSmoothResultPerSmoother)
 
     immSmootherResult
   }
@@ -86,8 +86,8 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
     * @return
     */
   def smoothStep(nextImmFilterResult: IMMFilterResult,
-                 squareRootProcessNoiseCovariancePerSmoother: List[DenseMatrix[Double]],
-                 stateTransitionMatrixPerSmoother: List[DenseMatrix[Double]],
+                 squareRootProcessNoiseCovariancePerSmoother: Vector[DenseMatrix[Double]],
+                 stateTransitionMatrixPerSmoother: Vector[DenseMatrix[Double]],
                  updatedLogModelProbability: DenseVector[Double],
                  logModelTransitionMatrix: DenseMatrix[Double]): State[IMMSmootherState, IMMSmootherResult] = State[IMMSmootherState, IMMSmootherResult] {
 
@@ -95,13 +95,13 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
 
       val nextSmoothedLogModelProbabilities: DenseVector[Double] = nextSmoothedState.smoothedLogModeProbability
       val logMixingWeight: DenseMatrix[Double] = nextImmFilterResult.logMixingWeight
-      val nextSmoothResultPerSmoother: List[SmoothResult] = nextSmoothedState.smoothResultPerSmoother
-      val nextFilterResultPerSmoother: List[FilterResult] = nextImmFilterResult.updateResultPerFilter
+      val nextSmoothResultPerSmoother: Vector[SmoothResult] = nextSmoothedState.smoothResultPerSmoother
+      val nextFilterResultPerSmoother: Vector[FilterResult] = nextImmFilterResult.updateResultPerFilter
 
       val backwardLogMixingMatrix: DenseMatrix[Double] = calculateBackwardLogMixingWeight(logMixingWeight, nextSmoothedLogModelProbabilities)
-      val mixedStateEstimationPerSmoother: List[FactoredGaussianDistribution] = modelConditionedReinitialization(backwardLogMixingMatrix, nextSmoothResultPerSmoother.map(_.smoothedStateEstimation))
+      val mixedStateEstimationPerSmoother: Vector[FactoredGaussianDistribution] = modelConditionedReinitialization(backwardLogMixingMatrix, nextSmoothResultPerSmoother.map(_.smoothedStateEstimation))
 
-      val smoothResultPerSmoother: List[SmoothResult] = modelConditionedSmoothing(nextFilterResultPerSmoother, squareRootProcessNoiseCovariancePerSmoother, stateTransitionMatrixPerSmoother, mixedStateEstimationPerSmoother)
+      val smoothResultPerSmoother: Vector[SmoothResult] = modelConditionedSmoothing(nextFilterResultPerSmoother, squareRootProcessNoiseCovariancePerSmoother, stateTransitionMatrixPerSmoother, mixedStateEstimationPerSmoother)
 
       val smoothedLogModelProbability: DenseVector[Double] = modelProbabilitySmooth(updatedLogModelProbability, logModelTransitionMatrix, nextFilterResultPerSmoother, nextSmoothResultPerSmoother)
 
@@ -155,14 +155,14 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
     * @return jth entry is :math:`P(x_{k+1} | m_k=j z_1,...,z_T)`
     */
   def modelConditionedReinitialization(backwardLogMixingMatrix: DenseMatrix[Double],
-                                       stateEstimationPerSmoother: List[FactoredGaussianDistribution]): List[FactoredGaussianDistribution] = {
+                                       stateEstimationPerSmoother: Vector[FactoredGaussianDistribution]): Vector[FactoredGaussianDistribution] = {
 
-    List.range(0, numOfSmoothers).map(smootherIndex => {
+    Vector.range(0, numOfSmoothers).map(smootherIndex => {
       val logMixingWeightPerFilter: DenseVector[Double] = backwardLogMixingMatrix(::, smootherIndex)
       calculateGaussianMixtureDistribution(
         stateEstimationPerSmoother,
-        exp(logMixingWeightPerFilter).toArray.toList,
-        modelStateProjectionMatrix(smootherIndex, ::).t.toArray.toList,
+        exp(logMixingWeightPerFilter).toArray.toVector,
+        modelStateProjectionMatrix(smootherIndex, ::).t.toArray.toVector,
         smootherIndex)
     })
 
@@ -177,11 +177,11 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
     * @param stateEstimationPerSmoother                  return of [[SquareRootIMMSmoother.modelConditionedReinitialization]]
     * @return jth element is :math:`P(x_k | m_k = j, z_1,...,z_T)`
     */
-  def modelConditionedSmoothing(filterResultPerSmoother: List[FilterResult],
-                                squareRootProcessNoiseCovariancePerSmoother: List[DenseMatrix[Double]],
-                                stateTransitionMatrixPerSmoother: List[DenseMatrix[Double]],
-                                stateEstimationPerSmoother: List[FactoredGaussianDistribution]): List[SmoothResult] = {
-    List.range(0, numOfSmoothers).map(smootherIndex => {
+  def modelConditionedSmoothing(filterResultPerSmoother: Vector[FilterResult],
+                                squareRootProcessNoiseCovariancePerSmoother: Vector[DenseMatrix[Double]],
+                                stateTransitionMatrixPerSmoother: Vector[DenseMatrix[Double]],
+                                stateEstimationPerSmoother: Vector[FactoredGaussianDistribution]): Vector[SmoothResult] = {
+    Vector.range(0, numOfSmoothers).map(smootherIndex => {
       smoothers(smootherIndex).
         smoothStep(filterResultPerSmoother(smootherIndex),
           squareRootProcessNoiseCovariancePerSmoother(smootherIndex),
@@ -201,11 +201,11 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
     */
   def modelProbabilitySmooth(updatedLogModelProbability: DenseVector[Double],
                              logModelTransitionMatrix: DenseMatrix[Double],
-                             nextFilterResultPerSmoother: List[FilterResult],
-                             nextSmoothResultPerSmoother: List[SmoothResult]): DenseVector[Double] = {
+                             nextFilterResultPerSmoother: Vector[FilterResult],
+                             nextSmoothResultPerSmoother: Vector[SmoothResult]): DenseVector[Double] = {
 
-    val u = List.range(0, numOfSmoothers).map(j => {
-      val v = List.range(0, numOfSmoothers).
+    val u = Vector.range(0, numOfSmoothers).map(j => {
+      val v = Vector.range(0, numOfSmoothers).
         map(i => {
 
           val nextSmoothedStateEstimate: FactoredGaussianDistribution = nextSmoothResultPerSmoother(i).smoothedStateEstimation
@@ -247,16 +247,16 @@ object SquareRootIMMSmoother {
     *         estimated model index
     *         estimtaed model probability
     */
-  def fuseEstResult(estimationResults: List[IMMSmootherResult],
-                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[MultipleModelEstimationResult] = {
+  def fuseEstResult(estimationResults: Vector[IMMSmootherResult],
+                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): Vector[MultipleModelEstimationResult] = {
 
     estimationResults.map(estimationResult => {
 
       val selectedModel: Int = argmax(estimationResult.smoothedLogModeProbability)
 
-      val estStates: List[FactoredGaussianDistribution] = estimationResult.smoothResultPerSmoother.map(_.smoothedStateEstimation)
-      val estStateProbabilities: List[Double] = estimationResult.smoothedLogModeProbability.toArray.toList.map(math.exp)
-      val fusedEstimationState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toList, selectedModel)
+      val estStates: Vector[FactoredGaussianDistribution] = estimationResult.smoothResultPerSmoother.map(_.smoothedStateEstimation)
+      val estStateProbabilities: Vector[Double] = estimationResult.smoothedLogModeProbability.toArray.toVector.map(math.exp)
+      val fusedEstimationState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toVector, selectedModel)
 
       MultipleModelEstimationResult(fusedEstimationState, selectedModel, estStateProbabilities(selectedModel),
         estimationResult.smoothResultPerSmoother(selectedModel).observationLogLikelihood)
@@ -265,9 +265,9 @@ object SquareRootIMMSmoother {
 
   }
 
-  case class IMMSmootherState(smoothedLogModeProbability: DenseVector[Double], smoothResultPerSmoother: List[SmoothResult])
+  case class IMMSmootherState(smoothedLogModeProbability: DenseVector[Double], smoothResultPerSmoother: Vector[SmoothResult])
 
   case class IMMSmootherResult(smoothedLogModeProbability: DenseVector[Double],
-                               smoothResultPerSmoother: List[SmoothResult])
+                               smoothResultPerSmoother: Vector[SmoothResult])
 
 }

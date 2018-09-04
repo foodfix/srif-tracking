@@ -28,11 +28,11 @@ import srif.tracking.{FactoredGaussianDistribution, TargetModel, sequence}
 /**
   * Square Root IMM Filter.
   *
-  * @param filters                    list of filters.
+  * @param filters                    vector of filters.
   * @param modelStateProjectionMatrix used to project the state of one model to another model
   * @param isDebugEnabled             true if show debug message
   */
-class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]], isDebugEnabled: Boolean = false) extends LazyLogging {
+class SquareRootIMMFilter(filters: Vector[SquareRootInformationFilter], modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]], isDebugEnabled: Boolean = false) extends LazyLogging {
 
   val numOfFilters: Int = filters.length
 
@@ -46,11 +46,11 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
     * @param invStateTransitionMatrixPerFilterLst         inverse of state transition matrix for each timestamp
     * @return filter result for each timestamp
     */
-  def apply(logModelTransitionMatrixLst: List[DenseMatrix[Double]],
-            observationLst: List[FactoredGaussianDistribution],
-            squareRootProcessNoiseCovariancePerFilterLst: List[List[DenseMatrix[Double]]],
-            stateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]],
-            invStateTransitionMatrixPerFilterLst: List[List[DenseMatrix[Double]]]): List[IMMFilterResult] = {
+  def apply(logModelTransitionMatrixLst: Vector[DenseMatrix[Double]],
+            observationLst: Vector[FactoredGaussianDistribution],
+            squareRootProcessNoiseCovariancePerFilterLst: Vector[Vector[DenseMatrix[Double]]],
+            stateTransitionMatrixPerFilterLst: Vector[Vector[DenseMatrix[Double]]],
+            invStateTransitionMatrixPerFilterLst: Vector[Vector[DenseMatrix[Double]]]): Vector[IMMFilterResult] = {
 
     val numOfTimeSteps: Int = observationLst.length
 
@@ -65,17 +65,17 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
     require(modelStateProjectionMatrix.rows == numOfFilters)
     require(modelStateProjectionMatrix.cols == numOfFilters)
 
-    for (i <- List.range(0, numOfFilters);
-         j <- List.range(0, numOfFilters)) yield {
+    for (i <- Vector.range(0, numOfFilters);
+         j <- Vector.range(0, numOfFilters)) yield {
       require(modelStateProjectionMatrix(i, j).rows == filters(i).getTargetModel.stateDim)
       require(modelStateProjectionMatrix(i, j).cols == filters(j).getTargetModel.stateDim)
     }
 
     val initialLogModeProbability: DenseVector[Double] = DenseVector.fill[Double](numOfFilters, math.log(1.0 / numOfFilters))
-    val initialFilterResultLst: List[FactoredGaussianDistribution] = filters.map(f => FactoredGaussianDistribution(DenseVector.zeros(f.dim), DenseMatrix.zeros(f.dim, f.dim)))
+    val initialFilterResultLst: Vector[FactoredGaussianDistribution] = filters.map(f => FactoredGaussianDistribution(DenseVector.zeros(f.dim), DenseMatrix.zeros(f.dim, f.dim)))
     val immInitialState: IMMFilterState = IMMFilterState(initialLogModeProbability, initialFilterResultLst)
 
-    sequence(List.range(0, numOfTimeSteps).map(idx =>
+    sequence(Vector.range(0, numOfTimeSteps).map(idx =>
       (logModelTransitionMatrixLst(idx),
         observationLst(idx),
         squareRootProcessNoiseCovariancePerFilterLst(idx),
@@ -98,16 +98,16 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
     */
   def filterStep(logModelTransitionMatrix: DenseMatrix[Double],
                  observation: FactoredGaussianDistribution,
-                 squareRootProcessNoiseCovariancePerFilter: List[DenseMatrix[Double]],
-                 stateTransitionMatrixPerFilter: List[DenseMatrix[Double]],
-                 invStateTransitionMatrixPerFilter: List[DenseMatrix[Double]]): State[IMMFilterState, IMMFilterResult] = State[IMMFilterState, IMMFilterResult] {
+                 squareRootProcessNoiseCovariancePerFilter: Vector[DenseMatrix[Double]],
+                 stateTransitionMatrixPerFilter: Vector[DenseMatrix[Double]],
+                 invStateTransitionMatrixPerFilter: Vector[DenseMatrix[Double]]): State[IMMFilterState, IMMFilterResult] = State[IMMFilterState, IMMFilterResult] {
     previousIMMState => {
 
-      val (mixedStateEstimatePerFilter: List[FactoredGaussianDistribution], predictedLogModelProbability: DenseVector[Double], logMixingWeight: DenseMatrix[Double]) =
+      val (mixedStateEstimatePerFilter: Vector[FactoredGaussianDistribution], predictedLogModelProbability: DenseVector[Double], logMixingWeight: DenseMatrix[Double]) =
         modelConditionedReinitialization(previousIMMState.updatedLogModeProbability,
           logModelTransitionMatrix, previousIMMState.updateStateEstimationLst)
 
-      val filterResultPerFilter: List[FilterResult] = modelConditionedFiltering(observation,
+      val filterResultPerFilter: Vector[FilterResult] = modelConditionedFiltering(observation,
         squareRootProcessNoiseCovariancePerFilter,
         stateTransitionMatrixPerFilter,
         invStateTransitionMatrixPerFilter,
@@ -165,21 +165,21 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
     */
   def modelConditionedReinitialization(previousLogModelProbabilities: DenseVector[Double],
                                        logModelTransitionMatrix: DenseMatrix[Double],
-                                       previousStateEstimationPerFilter: List[FactoredGaussianDistribution]):
-  (List[FactoredGaussianDistribution], DenseVector[Double], DenseMatrix[Double]) = {
+                                       previousStateEstimationPerFilter: Vector[FactoredGaussianDistribution]):
+  (Vector[FactoredGaussianDistribution], DenseVector[Double], DenseMatrix[Double]) = {
 
     val (logMixingWeight: DenseMatrix[Double], predictedLogModelProbability: DenseVector[Double]) =
       calculateLogMixingWeight(previousLogModelProbabilities, logModelTransitionMatrix)
 
     require(predictedLogModelProbability.forall(!_.isNaN))
 
-    val mixedStateEstimationPerFilter: List[FactoredGaussianDistribution] = List.range(0, numOfFilters).map(filterIndex => {
+    val mixedStateEstimationPerFilter: Vector[FactoredGaussianDistribution] = Vector.range(0, numOfFilters).map(filterIndex => {
       val logMixingWeightPerFilter: DenseVector[Double] = logMixingWeight(filterIndex, ::).t
 
       calculateGaussianMixtureDistribution(
         previousStateEstimationPerFilter,
-        exp(logMixingWeightPerFilter).toArray.toList,
-        modelStateProjectionMatrix(filterIndex, ::).t.toArray.toList,
+        exp(logMixingWeightPerFilter).toArray.toVector,
+        modelStateProjectionMatrix(filterIndex, ::).t.toArray.toVector,
         filterIndex)
     })
 
@@ -199,11 +199,11 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
     * @return state estimation :math:`P(x_k | m_k=i, z_1,...,z_k)` for each i
     */
   def modelConditionedFiltering(observation: FactoredGaussianDistribution,
-                                squareRootProcessNoiseCovariancePerFilter: List[DenseMatrix[Double]],
-                                stateTransitionMatrixPerFilter: List[DenseMatrix[Double]],
-                                invStateTransitionMatrixPerFilter: List[DenseMatrix[Double]],
-                                stateEstimationPerFilter: List[FactoredGaussianDistribution]): List[FilterResult] = {
-    List.range(0, numOfFilters).map(filterIndex => {
+                                squareRootProcessNoiseCovariancePerFilter: Vector[DenseMatrix[Double]],
+                                stateTransitionMatrixPerFilter: Vector[DenseMatrix[Double]],
+                                invStateTransitionMatrixPerFilter: Vector[DenseMatrix[Double]],
+                                stateEstimationPerFilter: Vector[FactoredGaussianDistribution]): Vector[FilterResult] = {
+    Vector.range(0, numOfFilters).map(filterIndex => {
       filters(filterIndex).filterStep(observation,
         squareRootProcessNoiseCovariancePerFilter(filterIndex),
         stateTransitionMatrixPerFilter(filterIndex),
@@ -220,7 +220,7 @@ class SquareRootIMMFilter(filters: List[SquareRootInformationFilter], modelState
     * @return :math:`P(m_k | z_1,...,z_k)`
     */
   def modelProbabilityUpdate(predictedLogModelProbability: DenseVector[Double],
-                             observationLikelihoodPerFilter: List[Double]): DenseVector[Double] = {
+                             observationLikelihoodPerFilter: Vector[Double]): DenseVector[Double] = {
 
     val modeLikelihoods: DenseVector[Double] =
       if (observationLikelihoodPerFilter.exists(_.isInfinite)) predictedLogModelProbability
@@ -258,16 +258,16 @@ object SquareRootIMMFilter {
     *         estimated model index
     *         estimtaed model probability
     */
-  def fuseEstResult(estimationResults: List[IMMFilterResult],
-                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[MultipleModelEstimationResult] = {
+  def fuseEstResult(estimationResults: Vector[IMMFilterResult],
+                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): Vector[MultipleModelEstimationResult] = {
 
     estimationResults.map(estimationResult => {
 
       val selectedModel: Int = argmax(estimationResult.updatedLogModeProbability)
 
-      val estStates: List[FactoredGaussianDistribution] = estimationResult.updateResultPerFilter.map(_.updatedStateEstimation)
-      val estStateProbabilities: List[Double] = estimationResult.updatedLogModeProbability.toArray.toList.map(math.exp)
-      val fusedState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toList, selectedModel)
+      val estStates: Vector[FactoredGaussianDistribution] = estimationResult.updateResultPerFilter.map(_.updatedStateEstimation)
+      val estStateProbabilities: Vector[Double] = estimationResult.updatedLogModeProbability.toArray.toVector.map(math.exp)
+      val fusedState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toVector, selectedModel)
 
       MultipleModelEstimationResult(fusedState, selectedModel, estStateProbabilities(selectedModel),
         estimationResult.updateResultPerFilter(selectedModel).observationLogLikelihood)
@@ -278,8 +278,8 @@ object SquareRootIMMFilter {
 
   case class IMMFilterResult(updatedLogModeProbability: DenseVector[Double],
                              logMixingWeight: DenseMatrix[Double],
-                             updateResultPerFilter: List[FilterResult])
+                             updateResultPerFilter: Vector[FilterResult])
 
-  case class IMMFilterState(updatedLogModeProbability: DenseVector[Double], updateStateEstimationLst: List[FactoredGaussianDistribution])
+  case class IMMFilterState(updatedLogModeProbability: DenseVector[Double], updateStateEstimationLst: Vector[FactoredGaussianDistribution])
 
 }

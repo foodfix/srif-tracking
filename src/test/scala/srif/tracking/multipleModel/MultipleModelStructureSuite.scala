@@ -44,7 +44,7 @@ class MultipleModelStructureSuite extends FlatSpec with Matchers {
       (0.94, 0.03, 0.03), (0.03, 0.94, 0.03), (0.03, 0.03, 0.94)
     )
 
-    val expectedModeTransitionMatrix: DenseMatrix[Double] = List.fill(stepSize.toInt)(modeTransitionMatrixPerSecond).reduce(_ * _)
+    val expectedModeTransitionMatrix: DenseMatrix[Double] = Vector.fill(stepSize.toInt)(modeTransitionMatrixPerSecond).reduce(_ * _)
 
     isMatrixAlmostEqual(multipleModel.getModelTransitionMatrix(stepSize), expectedModeTransitionMatrix) should be(true)
 

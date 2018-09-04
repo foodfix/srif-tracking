@@ -28,21 +28,21 @@ class BackwardSquareRootInformationFilter(targetModel: TargetModel,
   /**
     * Return the filter results.
     *
-    * @param observationLst                      : a list of [[FactoredGaussianDistribution]] presents the observations
+    * @param observationLst                      : a vector of [[FactoredGaussianDistribution]] presents the observations
     * @param squareRootProcessNoiseCovarianceLst : refer to [[TargetModel.calculateSquareRootProcessNoiseCovariance]]
     * @param stateTransitionMatrixLst            : refer to [[TargetModel.calculateStateTransitionMatrix]]
     * @param invStateTransitionMatrixLst         : refer to [[TargetModel.calculateInvStateTransitionMatrix()]]
     * @return filterd results
     */
-  override def apply(observationLst: List[FactoredGaussianDistribution],
-                     squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]],
-                     stateTransitionMatrixLst: List[DenseMatrix[Double]],
-                     invStateTransitionMatrixLst: List[DenseMatrix[Double]]): List[FilterResult] = {
+  override def apply(observationLst: Vector[FactoredGaussianDistribution],
+                     squareRootProcessNoiseCovarianceLst: Vector[DenseMatrix[Double]],
+                     stateTransitionMatrixLst: Vector[DenseMatrix[Double]],
+                     invStateTransitionMatrixLst: Vector[DenseMatrix[Double]]): Vector[FilterResult] = {
 
     require(observationLst.lengthCompare(squareRootProcessNoiseCovarianceLst.length) == 0)
     require(squareRootProcessNoiseCovarianceLst.lengthCompare(stateTransitionMatrixLst.length) == 0)
 
-    sequence(List.range(0, observationLst.length).reverse.map(idx => {
+    sequence(Vector.range(0, observationLst.length).reverse.map(idx => {
       val observation = observationLst(idx)
       val squareRootProcessNoiseCovariance = squareRootProcessNoiseCovarianceLst(idx)
       val stateTransitionMatrix = stateTransitionMatrixLst(idx)

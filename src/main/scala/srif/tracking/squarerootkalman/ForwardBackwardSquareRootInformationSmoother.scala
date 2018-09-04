@@ -33,27 +33,27 @@ class ForwardBackwardSquareRootInformationSmoother(targetModel: TargetModel,
   /**
     * Return the smooth results.
     *
-    * @param observationLst                      : a list of [[FactoredGaussianDistribution]] presents the observations
+    * @param observationLst                      : a vector of [[FactoredGaussianDistribution]] presents the observations
     * @param squareRootProcessNoiseCovarianceLst : refer to [[TargetModel.calculateSquareRootProcessNoiseCovariance]]
     * @param stateTransitionMatrixLst            : refer to [[TargetModel.calculateStateTransitionMatrix]]
     * @param invStateTransitionMatrixLst         refer to [[TargetModel.calculateInvStateTransitionMatrix]]
     * @return filterd results
     */
-  def apply(observationLst: List[FactoredGaussianDistribution],
-            squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]],
-            stateTransitionMatrixLst: List[DenseMatrix[Double]],
-            invStateTransitionMatrixLst: List[DenseMatrix[Double]]): List[SmoothResult] = {
+  def apply(observationLst: Vector[FactoredGaussianDistribution],
+            squareRootProcessNoiseCovarianceLst: Vector[DenseMatrix[Double]],
+            stateTransitionMatrixLst: Vector[DenseMatrix[Double]],
+            invStateTransitionMatrixLst: Vector[DenseMatrix[Double]]): Vector[SmoothResult] = {
 
     val forwardFilterResultLst = forwardFilter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
     val backwardFilterResultLst = backwardFilter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-    SmoothResult(backwardFilterResultLst.head.updatedStateEstimation, backwardFilterResultLst.head.observationLogLikelihood) :: List.range(1, observationLst.length - 1).map({
+    SmoothResult(backwardFilterResultLst.head.updatedStateEstimation, backwardFilterResultLst.head.observationLogLikelihood) +: Vector.range(1, observationLst.length - 1).map({
       idx => {
         val forwardFilterResult = forwardFilterResultLst(idx)
         val backwardFilterResult = backwardFilterResultLst(idx)
         smoothStep(forwardFilterResult, backwardFilterResult)
       }
-    }) ::: List(SmoothResult(forwardFilterResultLst.last.updatedStateEstimation, forwardFilterResultLst.last.observationLogLikelihood))
+    }) :+ SmoothResult(forwardFilterResultLst.last.updatedStateEstimation, forwardFilterResultLst.last.observationLogLikelihood)
   }
 
   /**

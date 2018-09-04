@@ -22,12 +22,12 @@ import srif.tracking.multipleModel.MultipleModelEstimationResult
 
 object MultipleModel {
 
-  def calculateEstimationError(estimatedResult: List[MultipleModelEstimationResult],
-                               trueStates: List[DenseVector[Double]], trueModels: List[Int],
+  def calculateEstimationError(estimatedResult: Vector[MultipleModelEstimationResult],
+                               trueStates: Vector[DenseVector[Double]], trueModels: Vector[Int],
                                modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-                               dropLeft: Int = 0, dropRight: Int = 0): List[Double] = {
+                               dropLeft: Int = 0, dropRight: Int = 0): Vector[Double] = {
 
-    List.range(0, trueStates.length).dropRight(dropRight).drop(dropLeft).map(idx => {
+    Vector.range(0, trueStates.length).dropRight(dropRight).drop(dropLeft).map(idx => {
 
       val trueState = trueStates(idx)
       val trueModel = trueModels(idx)
@@ -42,7 +42,7 @@ object MultipleModel {
       val modelScore: Double = if (trueModel == estModel) estProbability else 1 - estProbability
 
       DenseVector(stateScore, modelScore)
-    }).reduce(_ + _).toArray.toList.map(_ / (trueStates.length - dropLeft - dropRight))
+    }).reduce(_ + _).toArray.toVector.map(_ / (trueStates.length - dropLeft - dropRight))
 
   }
 

@@ -28,17 +28,17 @@ package object tracking {
   val minModeProbability: Double = 1e-3
   val verySmallStd: Double = 1e-3
 
-  def sequence[S, A](sas: List[State[S, A]]): State[S, List[A]] = {
+  def sequence[S, A](sas: Vector[State[S, A]]): State[S, Vector[A]] = {
     @tailrec
-    def go(s: S, actions: List[State[S, A]], acc: List[A]): (S, List[A]) =
+    def go(s: S, actions: Vector[State[S, A]], acc: Vector[A]): (S, Vector[A]) =
       actions match {
-        case Nil => (s, acc.reverse)
-        case h :: t => h.run(s) match {
-          case (s2, a) => go(s2, t, a :: acc)
+        case Vector() => (s, acc.reverse)
+        case h +: t => h.run(s) match {
+          case (s2, a) => go(s2, t, a +: acc)
         }
       }
 
-    State((s: S) => go(s, sas, List()))
+    State((s: S) => go(s, sas, Vector()))
   }
 
   /**

@@ -40,16 +40,16 @@ class SquareRootInformationSmoother(targetModel: TargetModel,
   /**
     * Return the smooth results.
     *
-    * @param observationLst                      : a list of [[FactoredGaussianDistribution]] presents the observations
+    * @param observationLst                      : a Vector of [[FactoredGaussianDistribution]] presents the observations
     * @param squareRootProcessNoiseCovarianceLst : refer to [[TargetModel.calculateSquareRootProcessNoiseCovariance]]
     * @param stateTransitionMatrixLst            : refer to [[TargetModel.calculateStateTransitionMatrix]]
     * @param invStateTransitionMatrixLst         refer to [[TargetModel.calculateInvStateTransitionMatrix]]
     * @return filterd results
     */
-  def apply(observationLst: List[FactoredGaussianDistribution],
-            squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]],
-            stateTransitionMatrixLst: List[DenseMatrix[Double]],
-            invStateTransitionMatrixLst: List[DenseMatrix[Double]]): List[SmoothResult] = {
+  def apply(observationLst: Vector[FactoredGaussianDistribution],
+            squareRootProcessNoiseCovarianceLst: Vector[DenseMatrix[Double]],
+            stateTransitionMatrixLst: Vector[DenseMatrix[Double]],
+            invStateTransitionMatrixLst: Vector[DenseMatrix[Double]]): Vector[SmoothResult] = {
 
     val filterResultLst = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
@@ -59,7 +59,7 @@ class SquareRootInformationSmoother(targetModel: TargetModel,
         case (filterResult, squareRootProcessNoiseCovariance, stateTransitionMatrix) =>
           smoothStep(filterResult, squareRootProcessNoiseCovariance, stateTransitionMatrix)
       }).reverse
-    ).eval(filterResultLst.last.updatedStateEstimation).reverse ::: List(SmoothResult(filterResultLst.last.updatedStateEstimation, filterResultLst.last.observationLogLikelihood))
+    ).eval(filterResultLst.last.updatedStateEstimation).reverse :+ SmoothResult(filterResultLst.last.updatedStateEstimation, filterResultLst.last.observationLogLikelihood)
 
   }
 

@@ -40,7 +40,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
 
   "calculateGaussianMixtureDistribution" should "return the mixture distribution" in {
 
-    List.range(0, numTestCases).foreach(_ => {
+    Vector.range(0, numTestCases).foreach(_ => {
       val x1 = getRandomGaussianDistribution(dim, range, r)
       val m1 = x1.m
       val V1 = x1.V
@@ -56,7 +56,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
       val bar_m = p1 * m1 + p2 * m2
       val factor = p1 * (m1 - bar_m) * (m1 - bar_m).t + p2 * (m2 - bar_m) * (m2 - bar_m).t
 
-      val x0 = calculateGaussianMixtureDistribution(List(y1, y2), List(p1, p2)).toGaussianDistribution
+      val x0 = calculateGaussianMixtureDistribution(Vector(y1, y2), Vector(p1, p2)).toGaussianDistribution
 
       max(abs(x0.m - bar_m)) should be <= tol
       max(abs(x0.V - p1 * V1 - p2 * V2 - factor)) should be <= tol
@@ -66,7 +66,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
 
   it should "return the mixture distribution with lifting" in {
 
-    List.range(0, numTestCases).foreach(_ => {
+    Vector.range(0, numTestCases).foreach(_ => {
       val x1 = getRandomGaussianDistribution(dim, range, r)
       val m1 = x1.m
       val V1 = x1.V
@@ -82,7 +82,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
       val bar_m = p1 * m1 + p2 * liftingMatrix * m2
       val factor = p1 * (m1 - bar_m) * (m1 - bar_m).t + p2 * (liftingMatrix * m2 - bar_m) * (liftingMatrix * m2 - bar_m).t
 
-      val x0 = calculateGaussianMixtureDistribution(List(y1, y2), List(p1, p2), modelStateProjectionMatrix(0, ::).t.toArray.toList, 0).toGaussianDistribution
+      val x0 = calculateGaussianMixtureDistribution(Vector(y1, y2), Vector(p1, p2), modelStateProjectionMatrix(0, ::).t.toArray.toVector, 0).toGaussianDistribution
 
       max(abs(x0.m - bar_m)) should be <= tol
       max(abs(x0.V - p1 * V1 - p2 * liftingMatrix * V2 * liftingMatrix.t - factor)) should be <= tol
@@ -92,7 +92,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
 
   it should "return the mixture distribution when one probability is minModeProbability" in {
 
-    List.range(0, numTestCases).foreach(_ => {
+    Vector.range(0, numTestCases).foreach(_ => {
       val x1 = getRandomGaussianDistribution(dim, range, r)
       val m1 = x1.m
       val V1 = x1.V
@@ -108,7 +108,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
       val bar_m = p1 * m1 + p2 * m2
       val factor = p1 * (m1 - bar_m) * (m1 - bar_m).t + p2 * (m2 - bar_m) * (m2 - bar_m).t
 
-      val x0 = calculateGaussianMixtureDistribution(List(y1, y2), List(p1, p2)).toGaussianDistribution
+      val x0 = calculateGaussianMixtureDistribution(Vector(y1, y2), Vector(p1, p2)).toGaussianDistribution
 
       max(abs(x0.m - bar_m)) should be <= tol
       max(abs(x0.V - p1 * V1 - p2 * V2 - factor)) should be <= tol
@@ -118,7 +118,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
 
   it should "return the mixture distribution when one probability is minModeProbability with lifting" in {
 
-    List.range(0, numTestCases).foreach(_ => {
+    Vector.range(0, numTestCases).foreach(_ => {
       val x1 = getRandomGaussianDistribution(dim, range, r)
       val m1 = x1.m
       val V1 = x1.V
@@ -134,7 +134,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
       val bar_m = p1 * m1 + p2 * liftingMatrix * m2
       val factor = p1 * (m1 - bar_m) * (m1 - bar_m).t + p2 * (liftingMatrix * m2 - bar_m) * (liftingMatrix * m2 - bar_m).t
 
-      val x0 = calculateGaussianMixtureDistribution(List(y1, y2), List(p1, p2), modelStateProjectionMatrix(0, ::).t.toArray.toList, 0).toGaussianDistribution
+      val x0 = calculateGaussianMixtureDistribution(Vector(y1, y2), Vector(p1, p2), modelStateProjectionMatrix(0, ::).t.toArray.toVector, 0).toGaussianDistribution
 
       max(abs(x0.m - bar_m)) should be <= tol
       max(abs(x0.V - p1 * V1 - p2 * liftingMatrix * V2 * liftingMatrix.t - factor)) should be <= tol
@@ -160,7 +160,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
       val bar_m = p1 * m1 + p2 * m2
       val factor = p1 * (m1 - bar_m) * (m1 - bar_m).t + p2 * (m2 - bar_m) * (m2 - bar_m).t
 
-      val x0 = calculateGaussianMixtureDistribution(List(y1, y2), List(p1, p2)).toGaussianDistribution
+      val x0 = calculateGaussianMixtureDistribution(Vector(y1, y2), Vector(p1, p2)).toGaussianDistribution
 
       max(abs(x0.m - bar_m)) should be <= tol
       max(abs(x0.V - p1 * V1 - p2 * V2 - factor)) should be <= tol * 100
@@ -186,7 +186,7 @@ class multipleModelSuite extends FlatSpec with Matchers {
       val bar_m = p1 * m1 + p2 * liftingMatrix * m2
       val factor = p1 * (m1 - bar_m) * (m1 - bar_m).t + p2 * (liftingMatrix * m2 - bar_m) * (liftingMatrix * m2 - bar_m).t
 
-      val x0 = calculateGaussianMixtureDistribution(List(y1, y2), List(p1, p2), modelStateProjectionMatrix(0, ::).t.toArray.toList, 0).toGaussianDistribution
+      val x0 = calculateGaussianMixtureDistribution(Vector(y1, y2), Vector(p1, p2), modelStateProjectionMatrix(0, ::).t.toArray.toVector, 0).toGaussianDistribution
 
       max(abs(x0.m - bar_m)) should be <= tol
       max(abs(x0.V - p1 * V1 - p2 * liftingMatrix * V2 * liftingMatrix.t - factor)) should be <= tol

@@ -37,7 +37,7 @@ class trackingSuite extends FlatSpec with Matchers {
 
   "sumFactoredGaussianDistribution" should "sum two FactoredGaussianDistribution" in {
 
-    List.range(0, numTestCases).foreach(_ => {
+    Vector.range(0, numTestCases).foreach(_ => {
       val x1 = getRandomGaussianDistribution(dim, range, r)
       val m1 = x1.m
       val V1 = x1.V
@@ -58,7 +58,7 @@ class trackingSuite extends FlatSpec with Matchers {
 
   it should "sum two FactoredGaussianDistribution with lifting" in {
 
-    List.range(0, numTestCases).foreach(_ => {
+    Vector.range(0, numTestCases).foreach(_ => {
       val x1 = getRandomGaussianDistribution(dim, range, r)
       val m1 = x1.m
       val V1 = x1.V
@@ -79,7 +79,7 @@ class trackingSuite extends FlatSpec with Matchers {
 
   it should "sum two FactoredGaussianDistribution with downgrading" in {
 
-    List.range(0, numTestCases).foreach(_ => {
+    Vector.range(0, numTestCases).foreach(_ => {
       val x1 = getRandomGaussianDistribution(dim, range, r)
       val m1 = x1.m
       val V1 = x1.V
@@ -100,7 +100,7 @@ class trackingSuite extends FlatSpec with Matchers {
 
   "FactoredGaussianDistribution.logLikelihood" should "compute the logarithmic likelihood for dim=2" in {
 
-    List.range(0, numTestCases).foreach(_ => {
+    Vector.range(0, numTestCases).foreach(_ => {
       val x = getRandomGaussianDistribution(2, range, r)
       x.toFactoredGaussianDistribution.logLikelihood should be(MultivariateGaussian(x.m, x.V).logPdf(DenseVector(0.0, 0.0)) +- 1e-8)
     })
@@ -109,7 +109,7 @@ class trackingSuite extends FlatSpec with Matchers {
 
   it should "compute the logarithmic likelihood for dim=4" in {
 
-    List.range(0, numTestCases).foreach(_ => {
+    Vector.range(0, numTestCases).foreach(_ => {
       val x = getRandomGaussianDistribution(4, range, r)
       x.toFactoredGaussianDistribution.logLikelihood should be(MultivariateGaussian(x.m, x.V).logPdf(DenseVector(0.0, 0.0, 0.0, 0.0)) +- 1e-8)
     })
