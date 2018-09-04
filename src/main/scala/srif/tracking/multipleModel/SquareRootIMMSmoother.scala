@@ -60,7 +60,7 @@ class SquareRootIMMSmoother(smoothers: List[SquareRootInformationSmoother], mode
     val immFilterResult: List[IMMFilterResult] = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerSmootherLst, stateTransitionMatrixPerSmootherLst, invStateTransitionMatrixPerFilterLst)
     val updatedLogModeProbabilityLst = immFilterResult.map(_.updatedLogModeProbability)
 
-    val initialSmoothResultPerSmoother: List[SmoothResult] = immFilterResult.last.updateResultPerFilter.map(x => SmoothResult(x.updatedStateEstimation))
+    val initialSmoothResultPerSmoother: List[SmoothResult] = immFilterResult.last.updateResultPerFilter.map(x => SmoothResult(x.updatedStateEstimation, x.observationLogLikelihood))
 
     val immSmootherResult: List[IMMSmootherResult] = sequence(List.range(1, numOfTimeSteps).map(idx => {
       (immFilterResult(idx),
@@ -248,7 +248,7 @@ object SquareRootIMMSmoother {
     *         estimtaed model probability
     */
   def fuseEstResult(estimationResults: List[IMMSmootherResult],
-                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[(FactoredGaussianDistribution, Int, Double)] = {
+                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[(FactoredGaussianDistribution, Int, Double, Double)] = {
 
     estimationResults.map(estimationResult => {
 
@@ -258,7 +258,8 @@ object SquareRootIMMSmoother {
       val estStateProbabilities: List[Double] = estimationResult.smoothedLogModeProbability.toArray.toList.map(math.exp)
       val fusedEstimationState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toList, selectedModel)
 
-      (fusedEstimationState, selectedModel, estStateProbabilities(selectedModel))
+      (fusedEstimationState, selectedModel, estStateProbabilities(selectedModel),
+        estimationResult.smoothResultPerSmoother(selectedModel).observationLogLikelihood)
 
     })
 

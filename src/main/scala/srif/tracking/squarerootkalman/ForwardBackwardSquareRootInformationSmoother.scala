@@ -47,13 +47,13 @@ class ForwardBackwardSquareRootInformationSmoother(targetModel: TargetModel,
     val forwardFilterResultLst = forwardFilter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
     val backwardFilterResultLst = backwardFilter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
-    SmoothResult(backwardFilterResultLst.head.updatedStateEstimation) :: List.range(1, observationLst.length - 1).map({
+    SmoothResult(backwardFilterResultLst.head.updatedStateEstimation, backwardFilterResultLst.head.observationLogLikelihood) :: List.range(1, observationLst.length - 1).map({
       idx => {
         val forwardFilterResult = forwardFilterResultLst(idx)
         val backwardFilterResult = backwardFilterResultLst(idx)
         smoothStep(forwardFilterResult, backwardFilterResult)
       }
-    }) ::: List(SmoothResult(forwardFilterResultLst.last.updatedStateEstimation))
+    }) ::: List(SmoothResult(forwardFilterResultLst.last.updatedStateEstimation, forwardFilterResultLst.last.observationLogLikelihood))
   }
 
   /**
@@ -86,7 +86,7 @@ class ForwardBackwardSquareRootInformationSmoother(targetModel: TargetModel,
 
     lazy val e: DenseVector[Double] = QR.r(R0.rows until (R0.rows + R1.rows), R0.cols until (R0.cols + 1)).toDenseVector
 
-    SmoothResult(FactoredGaussianDistribution(hat_zeta, hat_R))
+    SmoothResult(FactoredGaussianDistribution(hat_zeta, hat_R), forwardFilterResult.observationLogLikelihood)
 
   }
 

@@ -21,7 +21,7 @@ import srif.tracking.FactoredGaussianDistribution
 
 object MultipleModel {
 
-  def calculateEstimationError(estimatedResult: List[(FactoredGaussianDistribution, Int, Double)],
+  def calculateEstimationError(estimatedResult: List[(FactoredGaussianDistribution, Int, Double, Double)],
                                trueStates: List[DenseVector[Double]], trueModels: List[Int],
                                modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
                                dropLeft: Int = 0, dropRight: Int = 0): List[Double] = {
@@ -30,7 +30,7 @@ object MultipleModel {
 
       val trueState = trueStates(idx)
       val trueModel = trueModels(idx)
-      val (estState, estModel, estProbability): (FactoredGaussianDistribution, Int, Double) = estimatedResult(idx)
+      val (estState, estModel, estProbability, _): (FactoredGaussianDistribution, Int, Double, Double) = estimatedResult(idx)
 
       val errorVector: DenseVector[Double] = modelStateProjectionMatrix(0, estModel) * estState.toGaussianDistribution.m - modelStateProjectionMatrix(0, trueModel) * trueState
       val stateScore: Double = errorVector.t * errorVector
