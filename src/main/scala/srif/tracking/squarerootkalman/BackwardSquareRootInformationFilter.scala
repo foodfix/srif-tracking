@@ -31,7 +31,7 @@ class BackwardSquareRootInformationFilter(targetModel: TargetModel,
     * @param observationLst                      : a vector of [[FactoredGaussianDistribution]] presents the observations
     * @param squareRootProcessNoiseCovarianceLst : refer to [[TargetModel.calculateSquareRootProcessNoiseCovariance]]
     * @param stateTransitionMatrixLst            : refer to [[TargetModel.calculateStateTransitionMatrix]]
-    * @param invStateTransitionMatrixLst         : refer to [[TargetModel.calculateInvStateTransitionMatrix()]]
+    * @param invStateTransitionMatrixLst         : refer to [[TargetModel.calculateInvStateTransitionMatrix]]
     * @return filterd results
     */
   override def apply(observationLst: Vector[FactoredGaussianDistribution],
