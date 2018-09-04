@@ -21,6 +21,8 @@ import breeze.numerics.sqrt
 
 package object multipleModel {
 
+  case class MultipleModelEstimationResult(state: FactoredGaussianDistribution, model: Int, modelProbability: Double, observationLogLikelihood: Double)
+
   val MIN_PROBABILITY: Double = 1e-16
 
   /**

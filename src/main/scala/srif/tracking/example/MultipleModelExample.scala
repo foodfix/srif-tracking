@@ -86,15 +86,15 @@ object MultipleModelExample {
       ).transpose
 
       val immFilterResult = immFilter(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
-      val fusedIMMFilterResult: List[(FactoredGaussianDistribution, Int, Double, Double)] = SquareRootIMMFilter.fuseEstResult(immFilterResult, modelStateProjectionMatrix)
+      val fusedIMMFilterResult: List[MultipleModelEstimationResult] = SquareRootIMMFilter.fuseEstResult(immFilterResult, modelStateProjectionMatrix)
       outputSampleResult("IMMFilter", seed, observations, fusedIMMFilterResult, states, models, modelStateProjectionMatrix, 1, 0)
 
       val immSmootherResult = immSmoother(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
-      val fusedIMMSmootherResult: List[(FactoredGaussianDistribution, Int, Double, Double)] = SquareRootIMMSmoother.fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
+      val fusedIMMSmootherResult: List[MultipleModelEstimationResult] = SquareRootIMMSmoother.fuseEstResult(immSmootherResult, modelStateProjectionMatrix)
       outputSampleResult("IMMSmoother", seed, observations, fusedIMMSmootherResult, states, models, modelStateProjectionMatrix, 0, 0)
 
       val viterbiResult = viterbiAlg(logModelTransitionMatrixLst, observationLst, squareRootProcessNoiseCovariancePerFilterLst, stateTransitionMatrixPerFilterLst, invStateTransitionMatrixPerFilterLst)
-      val mapForwardViterbiResult: List[(FactoredGaussianDistribution, Int, Double, Double)] = viterbiAlg.
+      val mapForwardViterbiResult: List[MultipleModelEstimationResult] = viterbiAlg.
         smooth(viterbiResult,
           squareRootProcessNoiseCovariancePerFilterLst,
           stateTransitionMatrixPerFilterLst)
@@ -107,7 +107,7 @@ object MultipleModelExample {
   def outputSampleResult(estimatorName: String,
                          seed: Int,
                          observationVectorLst: List[DenseVector[Double]],
-                         estimatedResult: List[(FactoredGaussianDistribution, Int, Double, Double)],
+                         estimatedResult: List[MultipleModelEstimationResult],
                          trueStates: List[DenseVector[Double]], trueModels: List[Int],
                          modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
                          dropLeft: Int, dropRight: Int): Unit = {
@@ -121,7 +121,7 @@ object MultipleModelExample {
   def writeToCSV(trueStates: List[DenseVector[Double]],
                  trueModels: List[Int],
                  observationVectorLst: List[DenseVector[Double]],
-                 estimatedResults: List[(FactoredGaussianDistribution, Int, Double, Double)],
+                 estimatedResults: List[MultipleModelEstimationResult],
                  modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
                  fileName: String): Unit = {
 
@@ -136,17 +136,17 @@ object MultipleModelExample {
       val observationXY = observationVectorLst(idx)
 
       val estiamtedResult = estimatedResults(idx)
-      val estiamtedModel = estiamtedResult._2
-      val estiamtedModelProbability = estiamtedResult._3
+      val estiamtedModel = estiamtedResult.model
+      val estiamtedModelProbability = estiamtedResult.modelProbability
 
       val firstHalfRow: Seq[String] = Seq(model.toString, stateXY(0).toString, stateXY(1).toString, stateXY(2).toString, stateXY(3).toString,
         observationXY(0).toString, observationXY(1).toString,
         estiamtedModel.toString, estiamtedModelProbability.toString)
 
-      if (det(estiamtedResult._1.R) == 0)
+      if (det(estiamtedResult.state.R) == 0)
         firstHalfRow ++ Seq("", "", "", "", "")
       else {
-        val estimatedXY = modelStateProjectionMatrix(0, estiamtedModel) * estiamtedResult._1.toGaussianDistribution.m
+        val estimatedXY = modelStateProjectionMatrix(0, estiamtedModel) * estiamtedResult.state.toGaussianDistribution.m
         val errorVector: DenseVector[Double] = estimatedXY - stateXY
         firstHalfRow ++ Seq(estimatedXY(0), estimatedXY(1), estimatedXY(2), estimatedXY(3), errorVector.t * errorVector).map(_.toString)
       }

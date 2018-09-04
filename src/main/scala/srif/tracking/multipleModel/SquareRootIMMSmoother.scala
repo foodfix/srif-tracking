@@ -248,7 +248,7 @@ object SquareRootIMMSmoother {
     *         estimtaed model probability
     */
   def fuseEstResult(estimationResults: List[IMMSmootherResult],
-                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[(FactoredGaussianDistribution, Int, Double, Double)] = {
+                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[MultipleModelEstimationResult] = {
 
     estimationResults.map(estimationResult => {
 
@@ -258,7 +258,7 @@ object SquareRootIMMSmoother {
       val estStateProbabilities: List[Double] = estimationResult.smoothedLogModeProbability.toArray.toList.map(math.exp)
       val fusedEstimationState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toList, selectedModel)
 
-      (fusedEstimationState, selectedModel, estStateProbabilities(selectedModel),
+      MultipleModelEstimationResult(fusedEstimationState, selectedModel, estStateProbabilities(selectedModel),
         estimationResult.smoothResultPerSmoother(selectedModel).observationLogLikelihood)
 
     })

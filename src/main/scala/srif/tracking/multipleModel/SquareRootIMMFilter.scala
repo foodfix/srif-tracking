@@ -259,7 +259,7 @@ object SquareRootIMMFilter {
     *         estimtaed model probability
     */
   def fuseEstResult(estimationResults: List[IMMFilterResult],
-                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[(FactoredGaussianDistribution, Int, Double, Double)] = {
+                    modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]]): List[MultipleModelEstimationResult] = {
 
     estimationResults.map(estimationResult => {
 
@@ -269,7 +269,7 @@ object SquareRootIMMFilter {
       val estStateProbabilities: List[Double] = estimationResult.updatedLogModeProbability.toArray.toList.map(math.exp)
       val fusedState = calculateGaussianMixtureDistribution(estStates, estStateProbabilities, modelStateProjectionMatrix(selectedModel, ::).t.toArray.toList, selectedModel)
 
-      (fusedState, selectedModel, estStateProbabilities(selectedModel),
+      MultipleModelEstimationResult(fusedState, selectedModel, estStateProbabilities(selectedModel),
         estimationResult.updateResultPerFilter(selectedModel).observationLogLikelihood)
 
     })
