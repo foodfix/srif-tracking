@@ -124,18 +124,23 @@ class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
 
           val predictedLogLikelihoodPerFilter: DenseVector[Double] = previousForwardViterbiFilterState.updatedLogLikelihoodPerFilter + transitionLogLikelihood
 
-          val updatedLogLikelihoodPerFilter: DenseVector[Double] = predictedLogLikelihoodPerFilter + DenseVector(filterResultBeforeSwitching.map(_.observationLogLikelihood): _*)
+          val observationLogLikelihoodPerFilter: DenseVector[Double] = DenseVector(filterResultBeforeSwitching.map(_.observationLogLikelihood): _*)
+
+          val updatedLogLikelihoodPerFilter: DenseVector[Double] = predictedLogLikelihoodPerFilter + observationLogLikelihoodPerFilter
 
           val selectedModelIdx: Int = argmax(updatedLogLikelihoodPerFilter)
 
-          List(filterResultBeforeSwitching(selectedModelIdx),
+          List(
+            filterResultBeforeSwitching(selectedModelIdx),
             predictedLogLikelihoodPerFilter(selectedModelIdx),
+            observationLogLikelihoodPerFilter(selectedModelIdx),
             updatedLogLikelihoodPerFilter(selectedModelIdx),
             selectedModelIdx)
 
         }).transpose match {
-          case (filterResultPerFilter: List[FilterResult]) :: (predictedLogLikelihoodPerFilter: List[Double]) :: (updatedLogLikelihoodPerFilter: List[Double]) :: (previousModelPerFilter: List[Int]) :: Nil =>
+          case (filterResultPerFilter: List[FilterResult]) :: (predictedLogLikelihoodPerFilter: List[Double]) :: (observationLogLikelihoodPerFilter: List[Double]) :: (updatedLogLikelihoodPerFilter: List[Double]) :: (previousModelPerFilter: List[Int]) :: Nil =>
             val currentViterbiFilterResult = SquareRootViterbiFilterResult(
+              DenseVector(observationLogLikelihoodPerFilter: _*),
               DenseVector(updatedLogLikelihoodPerFilter: _*),
               filterResultPerFilter,
               Some(previousModelPerFilter)
@@ -209,7 +214,8 @@ class SquareRootViterbiAlgorithm(filters: List[SquareRootInformationFilter],
 
 object SquareRootViterbiAlgorithm {
 
-  case class SquareRootViterbiFilterResult(updatedLogLikelihoodPerFilter: DenseVector[Double],
+  case class SquareRootViterbiFilterResult(observationLogLikelihoodPerFilter: DenseVector[Double],
+                                           updatedLogLikelihoodPerFilter: DenseVector[Double],
                                            filterResultPerFilter: List[FilterResult],
                                            previousModelPerFilter: Option[List[Int]]) {
     def toState: SquareRootViterbiFilterState = SquareRootViterbiFilterState(
