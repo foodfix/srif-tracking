@@ -2,7 +2,7 @@ name := "srif-tracking"
 
 organization := "com.github.foodfix"
 
-version := "0.5-SNAPSHOT"
+version := "0.6-SNAPSHOT"
 
 scalaVersion := "2.11.12"
 

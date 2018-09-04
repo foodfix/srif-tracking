@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6
+* allow online estimation
+* use 'Vector' instead of 'List'
+
 ## 0.5
 * add Viterbi algorithm
 
