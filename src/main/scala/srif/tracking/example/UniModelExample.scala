@@ -34,7 +34,7 @@ object UniModelExample {
     val numOfEventsPerTestCase: Int = 1000
     val observationStd: Double = 100.0
 
-    val seeds: List[Int] = List.range(0, numberOfTestCases)
+    val seeds: Vector[Int] = Vector.range(0, numberOfTestCases)
 
     val model: TargetModel = ConstantVelocityModel(1.0)
     val initialState: DenseVector[Double] = DenseVector(0.0, 5.0, 0.0, 5.0)
@@ -43,32 +43,32 @@ object UniModelExample {
 
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEventsPerTestCase, observationStd, seed)
 
-      val observationLst: List[FactoredGaussianDistribution] = observationVectorLst.map(
+      val observationLst: Vector[FactoredGaussianDistribution] = observationVectorLst.map(
         x => {
           val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
           GaussianDistribution(x, covarianceMatrix).toFactoredGaussianDistribution
         }
       )
 
-      val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
-      val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
-      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
+      val squareRootProcessNoiseCovarianceLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
+      val stateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
       val forwardInformationFilter = new SquareRootInformationFilter(model, false)
       val backwardInformationFilter = new BackwardSquareRootInformationFilter(model, false)
       val informationSmoother = new SquareRootInformationSmoother(model, false)
       val forwardBackwardSmoother = new ForwardBackwardSquareRootInformationSmoother(model, false)
 
-      val forwardFilterResult: List[FilterResult] = forwardInformationFilter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
+      val forwardFilterResult: Vector[FilterResult] = forwardInformationFilter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
       outputSampleResult("ForwardInformationFilter", seed, observationVectorLst, forwardFilterResult.map(_.updatedStateEstimation), stateLst, 1, 0)
 
-      val backwardFilterResult: List[FilterResult] = backwardInformationFilter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
+      val backwardFilterResult: Vector[FilterResult] = backwardInformationFilter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
       outputSampleResult("BackwardInformationFilter", seed, observationVectorLst, backwardFilterResult.map(_.updatedStateEstimation), stateLst, 0, 1)
 
-      val smootherResult: List[SmoothResult] = informationSmoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
+      val smootherResult: Vector[SmoothResult] = informationSmoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
       outputSampleResult("InformationSmoother", seed, observationVectorLst, smootherResult.map(_.smoothedStateEstimation), stateLst, 0, 0)
 
-      val forwardBackwardSmootherResult: List[SmoothResult] = forwardBackwardSmoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
+      val forwardBackwardSmootherResult: Vector[SmoothResult] = forwardBackwardSmoother(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
       outputSampleResult("ForwardBackwardSmoother", seed, observationVectorLst, forwardBackwardSmootherResult.map(_.smoothedStateEstimation), stateLst, 0, 0)
 
     })
@@ -77,9 +77,9 @@ object UniModelExample {
 
   def outputSampleResult(estimatorName: String,
                          seed: Int,
-                         observationVectorLst: List[DenseVector[Double]],
-                         estimatedState: List[(FactoredGaussianDistribution)],
-                         trueStates: List[DenseVector[Double]],
+                         observationVectorLst: Vector[DenseVector[Double]],
+                         estimatedState: Vector[FactoredGaussianDistribution],
+                         trueStates: Vector[DenseVector[Double]],
                          dropLeft: Int, dropRight: Int) = {
 
     val error = calculateEstimationError(estimatedState, trueStates, dropLeft, dropRight)
@@ -89,15 +89,15 @@ object UniModelExample {
 
   }
 
-  def writeToCSV(states: List[DenseVector[Double]],
-                 observationVectorLst: List[DenseVector[Double]],
-                 estimatedStates: List[FactoredGaussianDistribution],
+  def writeToCSV(states: Vector[DenseVector[Double]],
+                 observationVectorLst: Vector[DenseVector[Double]],
+                 estimatedStates: Vector[FactoredGaussianDistribution],
                  fileName: String): Unit = {
 
     val headers = Seq("STATE_X", "STATE_DOT_X", "STATE_Y", "STATE_DOT_Y", "OBS_X", "OBS_Y",
       "EST_X", "EST_DOT_X", "EST_Y", "EST_DOT_Y", "MSE")
 
-    val records: Seq[Seq[String]] = List.range(0, states.length).map(idx => {
+    val records: Seq[Seq[String]] = Vector.range(0, states.length).map(idx => {
 
       val stateXY = states(idx)
       val observationXY = observationVectorLst(idx)

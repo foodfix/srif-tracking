@@ -30,7 +30,7 @@ import scala.util.Random
 
 class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyLogging {
 
-  val seeds: List[Int] = List.range(0, 10)
+  val seeds: Vector[Int] = Vector.range(0, 10)
   val numOfEvents: Int = 1000
   val observationStd: Double = 100.0
 
@@ -43,16 +43,16 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
     seeds.foreach(seed => {
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, observationStd, seed)
 
-      val observationLst: List[FactoredGaussianDistribution] = observationVectorLst.map(
+      val observationLst: Vector[FactoredGaussianDistribution] = observationVectorLst.map(
         x => {
           val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
           GaussianDistribution(x, covarianceMatrix).toFactoredGaussianDistribution
         }
       )
 
-      val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
-      val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
-      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
+      val squareRootProcessNoiseCovarianceLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
+      val stateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
       val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
@@ -72,16 +72,16 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
     seeds.foreach(seed => {
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, observationStd, seed)
 
-      val observationLst: List[FactoredGaussianDistribution] = observationVectorLst.map(
+      val observationLst: Vector[FactoredGaussianDistribution] = observationVectorLst.map(
         x => {
           val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
           GaussianDistribution(x, covarianceMatrix).toFactoredGaussianDistribution
         }
       )
 
-      val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
-      val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
-      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
+      val squareRootProcessNoiseCovarianceLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
+      val stateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
       val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
@@ -102,16 +102,16 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
     seeds.foreach(seed => {
       val (stateLst, observationVectorLst, stepSizeLst) = UniModelTestDataGenerator(model, initialState, numOfEvents, observationStd, seed)
 
-      val observationLst: List[FactoredGaussianDistribution] = observationVectorLst.map(
+      val observationLst: Vector[FactoredGaussianDistribution] = observationVectorLst.map(
         x => {
           val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
           GaussianDistribution(x, covarianceMatrix).toFactoredGaussianDistribution
         }
       )
 
-      val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
-      val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
-      val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
+      val squareRootProcessNoiseCovarianceLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
+      val stateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+      val invStateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
       val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
@@ -132,16 +132,16 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
 
     val filter = new SquareRootInformationFilter(model, false)
 
-    val observationLst: List[FactoredGaussianDistribution] = observationVectorLst.map(
+    val observationLst: Vector[FactoredGaussianDistribution] = observationVectorLst.map(
       x => {
         val covarianceMatrix: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
         GaussianDistribution(x, covarianceMatrix).toFactoredGaussianDistribution
       }
     )
 
-    val squareRootProcessNoiseCovarianceLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
-    val stateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
-    val invStateTransitionMatrixLst: List[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
+    val squareRootProcessNoiseCovarianceLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateSquareRootProcessNoiseCovariance)
+    val stateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateStateTransitionMatrix)
+    val invStateTransitionMatrixLst: Vector[DenseMatrix[Double]] = stepSizeLst.map(model.calculateInvStateTransitionMatrix)
 
     val results = filter(observationLst, squareRootProcessNoiseCovarianceLst, stateTransitionMatrixLst, invStateTransitionMatrixLst)
 
@@ -154,7 +154,7 @@ class SquareRootInformationFilterSuite extends FlatSpec with Matchers with LazyL
   "computeLogObservationProbability" should "compute the likelihood of observation" in {
     val r: Random = new scala.util.Random(0)
 
-    List.range(0, 100).foreach(_ => {
+    Vector.range(0, 100).foreach(_ => {
       val x = getRandomGaussianDistribution(2, 10, r)
       val y = getRandomGaussianDistribution(2, 10, r)
       val m = DenseMatrix.eye[Double](2)

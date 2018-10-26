@@ -21,13 +21,13 @@ import srif.tracking.FactoredGaussianDistribution
 
 object UniModel {
 
-  def calculateEstimationError(estimatedStates: List[FactoredGaussianDistribution],
-                               states: List[DenseVector[Double]],
+  def calculateEstimationError(estimatedStates: Vector[FactoredGaussianDistribution],
+                               states: Vector[DenseVector[Double]],
                                dropLeft: Int = 0, dropRight: Int = 0): Double = {
 
     require(estimatedStates.length == states.length)
 
-    (estimatedStates, states).zipped.toList.dropRight(dropRight).drop(dropLeft).map({
+    (estimatedStates, states).zipped.toVector.dropRight(dropRight).drop(dropLeft).map({
       case (estimatedState, state) =>
         val errorVector: DenseVector[Double] = estimatedState.toGaussianDistribution.m - state
         errorVector.t * errorVector

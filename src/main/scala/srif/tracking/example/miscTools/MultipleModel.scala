@@ -18,19 +18,23 @@ package srif.tracking.example.miscTools
 
 import breeze.linalg.{DenseMatrix, DenseVector}
 import srif.tracking.FactoredGaussianDistribution
+import srif.tracking.multipleModel.MultipleModelEstimationResult
 
 object MultipleModel {
 
-  def calculateEstimationError(estimatedResult: List[(FactoredGaussianDistribution, Int, Double)],
-                               trueStates: List[DenseVector[Double]], trueModels: List[Int],
+  def calculateEstimationError(estimatedResult: Vector[MultipleModelEstimationResult],
+                               trueStates: Vector[DenseVector[Double]], trueModels: Vector[Int],
                                modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-                               dropLeft: Int = 0, dropRight: Int = 0): List[Double] = {
+                               dropLeft: Int = 0, dropRight: Int = 0): Vector[Double] = {
 
-    List.range(0, trueStates.length).dropRight(dropRight).drop(dropLeft).map(idx => {
+    Vector.range(0, trueStates.length).dropRight(dropRight).drop(dropLeft).map(idx => {
 
       val trueState = trueStates(idx)
       val trueModel = trueModels(idx)
-      val (estState, estModel, estProbability): (FactoredGaussianDistribution, Int, Double) = estimatedResult(idx)
+
+      val estState: FactoredGaussianDistribution = estimatedResult(idx).state
+      val estModel: Int = estimatedResult(idx).model
+      val estProbability: Double = estimatedResult(idx).modelProbability
 
       val errorVector: DenseVector[Double] = modelStateProjectionMatrix(0, estModel) * estState.toGaussianDistribution.m - modelStateProjectionMatrix(0, trueModel) * trueState
       val stateScore: Double = errorVector.t * errorVector
@@ -38,7 +42,7 @@ object MultipleModel {
       val modelScore: Double = if (trueModel == estModel) estProbability else 1 - estProbability
 
       DenseVector(stateScore, modelScore)
-    }).reduce(_ + _).toArray.toList.map(_ / (trueStates.length - dropLeft - dropRight))
+    }).reduce(_ + _).toArray.toVector.map(_ / (trueStates.length - dropLeft - dropRight))
 
   }
 

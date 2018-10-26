@@ -21,47 +21,49 @@ import breeze.numerics.sqrt
 
 package object multipleModel {
 
+  case class MultipleModelEstimationResult(state: FactoredGaussianDistribution, model: Int, modelProbability: Double, observationLogLikelihood: Double)
+
   val MIN_PROBABILITY: Double = 1e-16
 
   /**
     * Return the [[FactoredGaussianDistribution]], which is obtained by mixing distributionLst
     * with probabilities probabilityLst.
     *
-    * @param distributionLst list of distribution to be mixed
+    * @param distributionLst vector of distribution to be mixed
     * @param probabilityLst  mixing probabilities for each of the distribution above
     * @return
     */
-  def calculateGaussianMixtureDistribution(distributionLst: List[FactoredGaussianDistribution],
-                                           probabilityLst: List[Double]): FactoredGaussianDistribution = {
+  def calculateGaussianMixtureDistribution(distributionLst: Vector[FactoredGaussianDistribution],
+                                           probabilityLst: Vector[Double]): FactoredGaussianDistribution = {
 
     require(distributionLst.lengthCompare(probabilityLst.length) == 0)
 
-    val modelStateProjectionMatrixLst: List[DenseMatrix[Double]] = List.fill(distributionLst.length)(DenseMatrix.eye[Double](distributionLst.head.zeta.length))
+    val modelStateProjectionMatrixLst: Vector[DenseMatrix[Double]] = Vector.fill(distributionLst.length)(DenseMatrix.eye[Double](distributionLst.head.zeta.length))
 
     calculateGaussianMixtureDistribution(distributionLst, probabilityLst, modelStateProjectionMatrixLst, 0)
 
   }
 
   /**
-    * Mixing a list of [[FactoredGaussianDistribution]], x1, x2, x3, ..., xn
+    * Mixing a vector of [[FactoredGaussianDistribution]], x1, x2, x3, ..., xn
     *
-    * @param distributionLst list of distribution to be mixed
+    * @param distributionLst vector of distribution to be mixed
     * @param probabilityLst  mixing probabilities for each of the distribution above
     * @param modelStateProjectionMatrixLst
     * @param projectToModelIdx
     * @return
     */
-  def calculateGaussianMixtureDistribution(distributionLst: List[FactoredGaussianDistribution],
-                                           probabilityLst: List[Double],
-                                           modelStateProjectionMatrixLst: List[DenseMatrix[Double]],
+  def calculateGaussianMixtureDistribution(distributionLst: Vector[FactoredGaussianDistribution],
+                                           probabilityLst: Vector[Double],
+                                           modelStateProjectionMatrixLst: Vector[DenseMatrix[Double]],
                                            projectToModelIdx: Int): FactoredGaussianDistribution = {
 
     require(distributionLst.lengthCompare(probabilityLst.length) == 0)
     require(distributionLst.lengthCompare(modelStateProjectionMatrixLst.length) == 0)
 
-    val mixingParameterList = (distributionLst, probabilityLst, modelStateProjectionMatrixLst).zipped.toList
+    val mixingParameterList = (distributionLst, probabilityLst, modelStateProjectionMatrixLst).zipped.toVector
 
-    val trunced = mixingParameterList.take(projectToModelIdx) ::: mixingParameterList.drop(projectToModelIdx + 1)
+    val trunced = mixingParameterList.take(projectToModelIdx) ++ mixingParameterList.drop(projectToModelIdx + 1)
 
     val targetModelParameter: (FactoredGaussianDistribution, Double, DenseMatrix[Double]) = mixingParameterList(projectToModelIdx)
 

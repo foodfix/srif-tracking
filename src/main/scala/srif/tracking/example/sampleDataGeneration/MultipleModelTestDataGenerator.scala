@@ -25,20 +25,20 @@ import scala.util.Random
 
 object MultipleModelTestDataGenerator {
 
-  def apply(targetModelLst: List[TargetModel],
+  def apply(targetModelLst: Vector[TargetModel],
             initialModel: Int,
-            initialStateLst: List[DenseVector[Double]],
+            initialStateLst: Vector[DenseVector[Double]],
             numOfEvents: Int,
             multipleModel: MultipleModelStructure,
             observationStd: Double,
             modelStateProjectionMatrix: DenseMatrix[DenseMatrix[Double]],
-            seed: Int): (List[Int], List[DenseVector[Double]], List[DenseVector[Double]], List[Double]) = {
+            seed: Int): (Vector[Int], Vector[DenseVector[Double]], Vector[DenseVector[Double]], Vector[Double]) = {
 
     val r: Random = new scala.util.Random(seed)
 
-    val stepSizeLst: List[Double] = List.fill[Double](numOfEvents - 1)(r.nextInt(10) + 1) // the length is numberOfEvents - 1
+    val stepSizeLst: Vector[Double] = Vector.fill[Double](numOfEvents - 1)(r.nextInt(10) + 1) // the length is numberOfEvents - 1
 
-    val modelsWithStates: List[(Int, DenseVector[Double])] = stepSizeLst.scanLeft((initialModel, initialStateLst(initialModel)))({
+    val modelsWithStates: Vector[(Int, DenseVector[Double])] = stepSizeLst.scanLeft((initialModel, initialStateLst(initialModel)))({
       case ((previousModel: Int, previousState: DenseVector[Double]), stepSize: Double) =>
 
         val modelTransitionMatrix: DenseMatrix[Double] = multipleModel.getModelTransitionMatrix(stepSize)
@@ -58,15 +58,15 @@ object MultipleModelTestDataGenerator {
 
     })
 
-    val models: List[Int] = modelsWithStates.map(_._1)
-    val states: List[DenseVector[Double]] = modelsWithStates.map(_._2)
-    val observations: List[DenseVector[Double]] = generateObservations(modelsWithStates, targetModelLst, observationStd, r)
+    val models: Vector[Int] = modelsWithStates.map(_._1)
+    val states: Vector[DenseVector[Double]] = modelsWithStates.map(_._2)
+    val observations: Vector[DenseVector[Double]] = generateObservations(modelsWithStates, targetModelLst, observationStd, r)
 
-    (models, states, observations, 1.0 :: stepSizeLst)
+    (models, states, observations, 1.0 +: stepSizeLst)
 
   }
 
-  def generateObservations(modelsWithStates: List[(Int, DenseVector[Double])], targetModelLst: List[TargetModel], observationStd: Double, r: Random): List[DenseVector[Double]] = {
+  def generateObservations(modelsWithStates: Vector[(Int, DenseVector[Double])], targetModelLst: Vector[TargetModel], observationStd: Double, r: Random): Vector[DenseVector[Double]] = {
     modelsWithStates.map({
       case (model: Int, state: DenseVector[Double]) =>
         val observationCovariance: DenseMatrix[Double] = DenseMatrix((observationStd * observationStd, 0.0), (0.0, observationStd * observationStd))
@@ -78,7 +78,7 @@ object MultipleModelTestDataGenerator {
 
   def sample(dist: DenseVector[Double], r: Random): Int = {
     val p = r.nextDouble
-    dist.toArray.toList.scanLeft(0.0)(_ + _).zipWithIndex.filter(_._1 >= p).head._2 - 1
+    dist.toArray.toVector.scanLeft(0.0)(_ + _).zipWithIndex.filter(_._1 >= p).head._2 - 1
   }
 
 }
