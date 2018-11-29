@@ -136,13 +136,9 @@ In this article, we describe the algorithm in this project.
 Naive implementations of Kalman filters and smoothers have numerical instability issues.
 In this project, the square root formulation of the Kalman algorithm is implemented, which is more accurate and stable. 
 
-In case the dynamics are presented by multiple models,
-an approach to the multiple model fixed interval smoothing problem for the square root Kalman algorithms is examined.
-The approach is based on the interacting multiple models (IMM), except that we consider the square root Kalman algorithms.
-
 \section{Square Root Kalman Algorithm}
 
-In this section, we describe the square root Kalman algorithm described in \cite{bierman2006factorization}.
+In this section, we summarize the square root Kalman algorithm described in \cite{bierman2006factorization}.
 
 Let $X$ be a Gaussian random variable with mean $m$ and covariance matrix $V$.
 The square root form of $X$ is given by $R$ and $z$ where
@@ -303,126 +299,6 @@ where
 	\item the right hand side is the QR decomposition of the left hand side and
 	\item $(R^*_x(k-1), z^*_x(k-1))$ is the smoothed estimate in square root form.
 \end{itemize}
-
-\section{Square Root IMM Algorithm}
-
-Let $M_k$ be the model in effect during the sampling period ending at time $k$.
-The event that model $j$ $(j=1,\ldots,n)$ is in effect during the sampling period ending at time $k$ will be denoted by $M^j_k$.
-
-\subsection{Square Root IMM Filter}
-
-When applying the classical IMM filtering, attentions are needed for the followings:
-\begin{itemize}
-	\item mixing the state estimates and
-	\item model likelihood computation.
-\end{itemize}
-
-\subsubsection{Mixing The State Estimates}
-
-\begin{prop}
-	Let $a$, $b$ and $c$ be multivariate Gaussian distribution with square root form $(R_a, z_a)$, $(R_b, z_b)$ and $(R_c, z_c)$ respectively.
-	Suppose that $c = a + Ab$ for some matrix $A$. Then
-	\begin{align}
-		\begin{pmatrix}
-			R_b &0 &z_b \\
-			-R_aA &R_a &z_a
-		\end{pmatrix} = \begin{pmatrix}
-		-, Q
-		\end{pmatrix}\begin{pmatrix}
-			H &L &-\\
-			0 &R_c &z_c
-		\end{pmatrix}
-		\label{prop_1:eq_1}
-	\end{align}
-	the right hand side is the QR decomposition of the left hand side.
-	Moreover,
-	\begin{align}
-		&Q^T\begin{pmatrix}
-			0 \\ z_a
-		\end{pmatrix} = R_c m_a,
-		&&Q^T\begin{pmatrix}
-		z_b \\ 0
-		\end{pmatrix} = R_c A m_b,
-		\label{prop_1:eq_7}
-	\end{align}
-	where $m_a, m_b$ and $m_c$ are mean of $a, b$ and $c$ respectively
-	\label{prop_1}
-\end{prop}
-
-\begin{proof}
-	Let $V_a, V_b$ and $V_c$ be the covariance matrix of $a, b$ and $c$ respectively.
-	
-	To prove \cref{prop_1:eq_1}, we need to show
-	\begin{align}
-		m_c &= m_a + A m_b, \label{prop_1:eq_9}\\
-		V_c &= V_a + A V_b A^T. \label{prop_1:eq_10}
-	\end{align}
-	
-	We first show that \cref{prop_1:eq_10} holds.
-	Comparing the left and right side of \cref{prop_1:eq_1}, we have
-	\begin{align}
-		H^TH &= R^T_b R_b + A^T R^T_a R_a A, \label{prop_1:eq_2}\\
-		H^TL &= -A^T R^T_a R_a, \label{prop_1:eq_3}\\
-		R^T_a R_a &= L^T L + R^T_c R_c. \label{prop_1:eq_4}
-	\end{align}
-	\Cref{prop_1:eq_3} implies that
-	\begin{align}
-		L = - H^{-T} A^T R^T_a R_a. \label{prop_1:eq_5}
-	\end{align}
-	
-	From \cref{prop_1:eq_2,prop_1:eq_4,prop_1:eq_5}, we have
-	\begin{align*}
-		R^T_c R_c 	&= R^T_a R_a - L^T L \\
-					&= R^T_a R_a - R^T_a R_a A (H^TH)^{-1} A^T R^T_a R_a \\
-					&= R^T_a R_a - R^T_a R_a A \left( R^T_b R_b + A^T R^T_a R_a A \right)^{-1} A^T R^T_a R_a \\
-					&= V_a^{-1} - V_a^{-1} A \left( V_b^{-1} + A^T V_a^{-1} A \right)^{-1} A^T V_a^{-1} \\
-					&= \left( V_a + A V_b A^T \right)^{-1}, \numberthis\label{prop_1:eq_6}
-	\end{align*}
-	where \cref{prop_1:eq_6} is due to \textit{Woodbury matrix identity}.
-	Hence \cref{prop_1:eq_9} holds.
-	
-	Before we show that $m_c = m_a + A m_b$, we show \cref{prop_1:eq_7} first.
-	By pre--multiplying $Q^T$ to the left and right side of \cref{prop_1:eq_1}, we obtain that
-	\begin{align}
-		Q^T \begin{pmatrix}
-		R_b &0 &z_b \\
-		-R_aA &R_a &z_a
-		\end{pmatrix} = \begin{pmatrix}
-		0, I
-		\end{pmatrix}\begin{pmatrix}
-		H &L &-\\
-		0 &R_c &z_c
-		\end{pmatrix} = \begin{pmatrix} 0 &R_c &z_c \end{pmatrix}.
-		\label{prop_1:eq_8}
-	\end{align}
-	Hence by \cref{prop_1:eq_8}, we have
-	\begin{align*}
-		Q^T\begin{pmatrix} R_b \\ -R_aA \end{pmatrix} &= 
-		Q^T\begin{pmatrix} R_b \\ 0 \end{pmatrix} - Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} A = 0, \\
-		Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} &= R_c,
-	\end{align*}
-	which implies \cref{prop_1:eq_7} using
-	\begin{align*}
-		Q^T\begin{pmatrix} 0 \\ z_a \end{pmatrix} &= Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} m_a = R_c m_a, \\
-		Q^T\begin{pmatrix} z_b \\ 0 \end{pmatrix} &= 
-		Q^T\begin{pmatrix} R_b \\ 0 \end{pmatrix} m_b = Q^T\begin{pmatrix} 0 \\ R_a \end{pmatrix} A m_b =
-		 R_c A m_b.
-	\end{align*}
-	
-	From \cref{prop_1:eq_7,prop_1:eq_8} we have
-	\begin{align*}
-	Q^T\begin{pmatrix} z_b \\ z_a \end{pmatrix} = 
-	Q^T\begin{pmatrix} z_b \\ 0 \end{pmatrix} + Q^T\begin{pmatrix} 0 \\ z_a \end{pmatrix} =
-	R_c m_a + R_c A m_b =
-	z_c = R_c m_c.
-	\end{align*}
-	Since $R_c$ is invertible, \cref{prop_1:eq_9} follows.
-	
-\end{proof}
-
-
-
-\subsubsection{Model Likelihood Computation}
 
 %%%%%%%%%%%%%%%%%%%%   End of main body of article
 %

@@ -2,10 +2,8 @@
 
 This repository implemented
 
-- *Square-root information filter and smoother*,
-- *Square-root interacting multiple model (IMM) filter smoother*
-- *Square-root IMM filter and smoother* and
-- *Square-root Viterbi Algorithm*
+- *Uni-model Square-root information filter and smoother*,
+- *Multiple model Square-root Viterbi Algorithm*
 
 ### How It Works
 
