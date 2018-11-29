@@ -17,7 +17,6 @@
 
 ## 0.2
 * reorganize the test cases
-* add example for IMM filter and smoother 
-    
+
 ## 0.1
 * Initial release.
